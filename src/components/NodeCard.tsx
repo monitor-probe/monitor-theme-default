@@ -7,8 +7,12 @@ import type { Node } from "@/lib/api"
 import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, uptime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
-/** Which direction the plan meters, matching the node's traffic_mode. */
+/**
+ * This period's usage as the plan meters it. The hub computes it; the switch
+ * below serves only a hub from before `month_used`.
+ */
 function monthUsage(node: Node): number {
+  if (typeof node.month_used === "number") return node.month_used
   const { month_rx: rx, month_tx: tx } = node
   switch (node.traffic_mode) {
     case "up":

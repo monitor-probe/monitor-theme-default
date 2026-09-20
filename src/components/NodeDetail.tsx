@@ -415,9 +415,11 @@ export function NodeDetail({ node }: { node: Node }) {
                       // The line is drawn from what answered, so without this a
                       // bucket that lost most of its packets reads as normal.
                       // `dataKey` is `t7`/`s7`; the loss sits at `l7`.
+                      // 被削掉的样本带的是偶数窗口的中位数，落在两个整毫秒之间，
+                      // 因此取整。
                       formatter={(v, name, item) => {
                         const loss = Number(item?.payload?.[`l${String(item.dataKey).slice(1)}`] ?? 0)
-                        return [`${Number(v)} ms${loss > 0 ? ` · 丢 ${loss}%` : ""}`, name]
+                        return [`${Math.round(Number(v))} ms${loss > 0 ? ` · 丢 ${loss}%` : ""}`, name]
                       }}
                       contentStyle={{ fontSize: 12 }}
                     />

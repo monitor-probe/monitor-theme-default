@@ -109,6 +109,23 @@ function Tab({ active, onClick, children }: { active: boolean; onClick: () => vo
   )
 }
 
+/**
+ * How many samples of a probe's own series make up seven minutes of neighbours.
+ *
+ * The window the filter judges against has to be a duration, not a count: the
+ * hub buckets a window to the `points` asked for below, so the same day arrives
+ * as one-minute buckets on a desktop and two-minute ones on a phone, and a fixed
+ * count would clip a five-minute stall on the first while keeping it on the
+ * second. The smallest gap is the bucket interval; a longer one is the node
+ * being offline. Odd, so the window has a middle, and bounded so a sparse probe
+ * still has neighbours and a dense one does not pay for a wide sort.
+ */
+function despikeWindow(points: { ts: number }[]): number {
+  let step = Infinity
+  for (let i = 1; i < points.length; i++) step = Math.min(step, points[i].ts - points[i - 1].ts)
+  return Math.min(15, Math.max(3, Math.round(420 / step) | 1))
+}
+
 function Fact({ label, value }: { label: string; value?: string | number | null }) {
   if (value === null || value === undefined || value === "") return null
   return (
@@ -246,13 +263,14 @@ export function NodeDetail({ node }: { node: Node }) {
       { ts: number } & Record<string, number | [number, number] | null>
     >()
     for (const s of pingSeries) {
-      const smoothed = despike(s.points.map((p) => p.latency))
+      const window = despikeWindow(s.points)
+      const smoothed = despike(s.points.map((p) => p.latency), window)
       // The band spans the same outliers as the line, and with one probe on
       // screen it is what the axis is fitted to, so it is clipped alongside it
       // rather than left to pull the axis back open. The latency fills the
       // buckets that carry no band, keeping each filter's window dense.
-      const lo = despike(s.points.map((p) => p.band?.[0] ?? p.latency))
-      const hi = despike(s.points.map((p) => p.band?.[1] ?? p.latency))
+      const lo = despike(s.points.map((p) => p.band?.[0] ?? p.latency), window)
+      const hi = despike(s.points.map((p) => p.band?.[1] ?? p.latency), window)
       s.points.forEach((p, i) => {
         const row = rows.get(p.ts) ?? { ts: p.ts * 1_000 }
         row[`t${s.id}`] = p.latency

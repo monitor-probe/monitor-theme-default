@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from "react"
+import { lazy, Suspense, useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import { Moon, Sun, Wrench } from "lucide-react"
 
 import { NodeCard } from "@/components/NodeCard"
@@ -43,20 +43,26 @@ const DARK_MEDIA = matchMedia("(prefers-color-scheme: dark)")
 
 /**
  * The visitor's own choice, or the system's while there is none. Only the toggle
- * writes the choice down: persisting the system's answer on first load would pin
- * it, leaving a visitor who never touched the toggle in whichever mode their
- * system happened to be in that day.
+ * writes the choice down: persisting the system's answer on load would pin it,
+ * leaving a visitor who never touched the toggle in whichever mode their system
+ * happened to be in that day. The panel at `/admin/` shares this key on one
+ * origin, so it has to hold to the same rule -- one app writing on load pins the
+ * others.
+ *
+ * The system's answer is subscribed to rather than copied into state: a flip
+ * landing between the first render and the effect that would have attached the
+ * listener is otherwise never heard, and the next one is a day away.
  */
 function useTheme() {
   const [saved, setSaved] = useState(() => localStorage.getItem("theme"))
-  const [system, setSystem] = useState(() => DARK_MEDIA.matches)
+  const system = useSyncExternalStore(
+    (notify) => {
+      DARK_MEDIA.addEventListener("change", notify)
+      return () => DARK_MEDIA.removeEventListener("change", notify)
+    },
+    () => DARK_MEDIA.matches,
+  )
   const dark = saved ? saved === "dark" : system
-
-  useEffect(() => {
-    const sync = () => setSystem(DARK_MEDIA.matches)
-    DARK_MEDIA.addEventListener("change", sync)
-    return () => DARK_MEDIA.removeEventListener("change", sync)
-  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark)

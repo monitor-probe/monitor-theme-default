@@ -6,18 +6,16 @@ React + Vite + shadcn/ui，黑白配色。
 
 ## 开发
 
-启动一个 hub 实例：
-
-```bash
-monitor-hub --listen 127.0.0.1:9911 --db /tmp/monitor.db --site http://127.0.0.1:9911
-```
-
-启动开发服务器，Vite 将 `/api` 与 WebSocket 代理至 hub：
+主题只读公开数据，开发服务器直接拿一个现成的 hub 当数据源，要求它开着公开状态页：
 
 ```bash
 npm ci
-npm run dev
+# Vite 将 /api 与 WebSocket 代理至这个 hub
+MONITOR_HUB=https://hub.example.com npm run dev
 ```
+
+不设 `MONITOR_HUB` 时代理至 `http://127.0.0.1:9911`。在本机起 hub、自己造节点的写法见文档站的
+[主题开发](https://monitor-document.pages.dev/dev/theme)页。
 
 构建产物位于 `dist/`。提交前运行 `npm run build && npm run lint && npm test`。
 

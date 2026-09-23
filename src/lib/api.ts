@@ -86,21 +86,22 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Throughput, one sample per push, as a series for every node ("*") and one per
+ * Throughput, one sample per push, as a series for every node (null) and one per
  * group ("" for the ungrouped), so the summary above a group tab draws that
  * group's line rather than the fleet's. Held beside the stream that feeds it
  * rather than in the tile that draws it: the summary unmounts while a node page
  * is open, so a buffer held there would restart empty on every return. Two
  * minutes at the hub's push interval; a group no node carries any more is
- * dropped.
+ * dropped. Keyed null rather than by any string, since a group may be named
+ * anything, "*" included.
  */
 const KEEP = 60
-export const speedHistory = new Map<string, { rx: number; tx: number }[]>()
+export const speedHistory = new Map<string | null, { rx: number; tx: number }[]>()
 
 export function sample(nodes: Node[]) {
-  const totals = new Map<string, { rx: number; tx: number }>()
+  const totals = new Map<string | null, { rx: number; tx: number }>()
   for (const n of nodes) {
-    for (const key of ["*", n.group ?? ""]) {
+    for (const key of [null, n.group ?? ""]) {
       const total = totals.get(key) ?? { rx: 0, tx: 0 }
       if (n.online && n.metrics) {
         total.rx += n.metrics.net_rx

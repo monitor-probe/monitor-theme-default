@@ -23,7 +23,10 @@ console.log("groups follow the node order")
 // empties stops being tracked.
 const live = (group: string, rx: number) => ({ ...node, group, online: true, metrics: { ...node.metrics!, net_rx: rx, net_tx: 0 } }) as Node
 sample([live("东京", 5), live("", 7), { ...live("东京", 9), online: false }])
-assert.deepEqual([speedHistory.get("*")?.at(-1)?.rx, speedHistory.get("东京")?.at(-1)?.rx, speedHistory.get("")?.at(-1)?.rx], [12, 5, 7])
+assert.deepEqual([speedHistory.get(null)?.at(-1)?.rx, speedHistory.get("东京")?.at(-1)?.rx, speedHistory.get("")?.at(-1)?.rx], [12, 5, 7])
 sample([live("", 1)])
 assert.equal(speedHistory.has("东京"), false)
+// A group may be named anything, the fleet's own key included.
+sample([live("*", 5), live("", 7)])
+assert.deepEqual([speedHistory.get(null)?.at(-1)?.rx, speedHistory.get("*")?.at(-1)?.rx], [12, 5])
 console.log("throughput is kept per group")

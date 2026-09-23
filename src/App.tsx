@@ -201,11 +201,15 @@ function NodeList({ nodes, group, onGroup, onOpen }: {
   onOpen: (id: number) => void
 }) {
   const groups = groupsOf(nodes)
-  // A group that has since emptied or been renamed falls back to every node
-  // rather than to an empty page.
-  const current = group === null || group === "" || groups.includes(group) ? group : null
-  const shown = current === null ? nodes : nodes.filter((n) => (n.group ?? "") === current)
   const ungrouped = nodes.filter((n) => !n.group).length
+  // A tab that has since emptied or been renamed -- 未分组 included -- falls back
+  // to every node rather than to an empty page, and is forgotten, so a later
+  // group of the same name does not take the page over.
+  const current = group === null || (group === "" ? ungrouped > 0 : groups.includes(group)) ? group : null
+  useEffect(() => {
+    if (current !== group) onGroup(current)
+  }, [current, group, onGroup])
+  const shown = current === null ? nodes : nodes.filter((n) => (n.group ?? "") === current)
   const tabs = [
     [null, "全部", nodes.length] as const,
     ...groups.map((g) => [g, g, nodes.filter((n) => n.group === g).length] as const),
@@ -214,12 +218,13 @@ function NodeList({ nodes, group, onGroup, onOpen }: {
   return (
     <>
       {groups.length > 0 && (
-        <div role="tablist" aria-label="分组" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+        <div role="group" aria-label="分组" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
           {tabs.map(([value, label, count]) => (
             <Button
-              key={value ?? "*"}
-              role="tab"
-              aria-selected={current === value}
+              // Group names are free text, so they carry a prefix no key of
+              // the 全部 tab can share.
+              key={value === null ? "*" : `=${value}`}
+              aria-pressed={current === value}
               size="sm"
               variant={current === value ? "secondary" : "ghost"}
               className="shrink-0"
@@ -231,7 +236,7 @@ function NodeList({ nodes, group, onGroup, onOpen }: {
           ))}
         </div>
       )}
-      <Summary nodes={shown} group={current ?? "*"} />
+      <Summary nodes={shown} group={current} />
       {nodes.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">还没有节点</p>
       ) : (

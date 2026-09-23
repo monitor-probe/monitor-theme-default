@@ -64,8 +64,8 @@ function Spark({ series }: { series: { values: number[]; className: string }[] }
   )
 }
 
-/** `group` picks the throughput series: "*" for every node, else the tab's group. */
-export function Summary({ nodes, group }: { nodes: Node[]; group: string }) {
+/** `group` picks the throughput series: null for every node, else the tab's group. */
+export function Summary({ nodes, group }: { nodes: Node[]; group: string | null }) {
   const online = nodes.filter((n) => n.online)
   const sum = (pick: (n: Node) => number) => nodes.reduce((total, n) => total + pick(n), 0)
 

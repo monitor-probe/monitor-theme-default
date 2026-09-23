@@ -36,7 +36,7 @@ npm run dev
     └── index.html
 ```
 
-`theme.json` 的字段均为字符串：
+`theme.json` 六个字段都要写，均为字符串，`description`、`version`、`author`、`url` 可以留空，少写一个 hub 就不认这个主题：
 
 | 字段 | 含义 |
 |---|---|

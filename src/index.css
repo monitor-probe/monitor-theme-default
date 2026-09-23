@@ -41,6 +41,11 @@
      darkens as it fills. */
   --ok: oklch(0.62 0 0);
   --warn: oklch(0.44 0 0);
+  /* The status dot. Each clears 3:1 against the card (3.7 and 5.5), and 1.5:1
+     against the other, the separation red-green colour blindness still
+     perceives. */
+  --online: oklch(0.6 0.16 150);
+  --offline: oklch(0.52 0 0);
 }
 
 .dark {
@@ -70,6 +75,10 @@
   /* Inverted against the dark ground: the fuller the bar, the brighter. */
   --ok: oklch(0.62 0 0);
   --warn: oklch(0.79 0 0);
+  /* 7.8 and 3.7 against the card, 2.1 apart. The muted grey would sit 1.15 from
+     the green. */
+  --online: oklch(0.72 0.17 150);
+  --offline: oklch(0.55 0 0);
 }
 
 @theme inline {
@@ -102,6 +111,8 @@
   --color-chart-5: var(--chart-5);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
+  --color-online: var(--online);
+  --color-offline: var(--offline);
 }
 
 @layer base {

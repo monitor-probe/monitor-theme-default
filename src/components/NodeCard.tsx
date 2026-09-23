@@ -1,4 +1,9 @@
+import type { CSSProperties } from "react"
 import { ArrowDown, ArrowUp } from "lucide-react"
+import {
+  siAlmalinux, siAlpinelinux, siArchlinux, siCentos, siDebian, siFedora, siLinux, siOpensuse, siRedhat,
+  siRockylinux, siUbuntu, type SimpleIcon,
+} from "simple-icons"
 
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -6,6 +11,31 @@ import { Meter } from "@/components/Meter"
 import type { Node } from "@/lib/api"
 import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, uptime } from "@/lib/format"
 import { cn } from "@/lib/utils"
+
+// Emitted as files and fetched on first use, so a page carries only the flags its
+// nodes are in rather than all 265. vite.config.ts keeps them from being inlined
+// into the bundle as data URLs. The simplified set, because this theme is
+// embedded in the hub binary: flag-icons' detailed emblems total 1.95 MiB against
+// 174 KiB here, a difference invisible at 18 by 12 pixels.
+const FLAGS = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("/node_modules/country-flag-icons/3x2/*.svg", {
+      query: "?url",
+      import: "default",
+      eager: true,
+    }),
+  ).map(([path, url]) => [path.match(/([\w-]+)\.svg$/)![1], url]),
+)
+
+// Matched against the whole release name, since "Red Hat Enterprise Linux" and
+// "Raspbian GNU/Linux" do not lead with one word to key on. The distributions a
+// VPS ships with; the rest take the penguin. Each logo costs 1-6 KB of entry
+// bundle, so the list stays at what hosts offer.
+const DISTROS: [string, SimpleIcon][] = [
+  ["debian", siDebian], ["raspbian", siDebian], ["ubuntu", siUbuntu], ["alpine", siAlpinelinux],
+  ["centos", siCentos], ["rocky", siRockylinux], ["almalinux", siAlmalinux], ["red hat", siRedhat],
+  ["fedora", siFedora], ["arch", siArchlinux], ["opensuse", siOpensuse],
+]
 
 /**
  * This period's usage as the plan meters it. The hub computes it; the switch
@@ -52,19 +82,54 @@ export function Status({ node }: { node: Node }) {
       variant="outline"
       className={cn("tnum shrink-0 gap-1.5 font-normal", !node.online && "text-muted-foreground")}
     >
-      <span className={cn("size-1.5 rounded-full", node.online ? "bg-foreground" : "bg-muted-foreground/40")} />
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          node.online ? "bg-online" : deployed(node) ? "bg-offline" : "bg-muted-foreground/40",
+        )}
+      />
       {label.trim()}
     </Badge>
   )
 }
 
-/** Where the machine is, in the same shape as the badge next to it. */
+/** Where the machine is: its flag, or the bare code for one the set lacks. */
 export function Country({ node }: { node: Node }) {
   if (!node.country) return null
+  const src = FLAGS[node.country]
+  if (!src) {
+    return (
+      <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
+        {node.country}
+      </Badge>
+    )
+  }
   return (
-    <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-      {node.country}
-    </Badge>
+    <img
+      src={src}
+      alt={node.country}
+      title={node.country}
+      className="h-3 w-4.5 shrink-0 rounded-[2px] ring-1 ring-foreground/10"
+    />
+  )
+}
+
+/**
+ * The distribution's logo in its brand colour. Mixed toward white on the dark
+ * theme, where AlmaLinux's black and CentOS's navy would otherwise vanish.
+ */
+function OsIcon({ os }: { os: string }) {
+  const name = os.toLowerCase()
+  const icon = DISTROS.find(([key]) => name.includes(key))?.[1] ?? siLinux
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      style={{ "--brand": `#${icon.hex}` } as CSSProperties}
+      className="size-3 shrink-0 fill-(--brand) dark:fill-[color-mix(in_oklab,var(--brand)_60%,white)]"
+    >
+      <path d={icon.path} />
+    </svg>
   )
 }
 
@@ -113,10 +178,13 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
             <h3 className="truncate font-medium">{node.name}</h3>
             <Country node={node} />
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">
-            {node.os ? osName(node.os) : "等待首次上报"}
-            {node.virt && node.virt !== "none" ? ` · ${node.virt}` : ""}
-            {node.arch ? ` · ${node.arch}` : ""}
+          <p className="mt-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+            {node.os && <OsIcon os={node.os} />}
+            <span className="truncate">
+              {node.os ? osName(node.os) : "等待首次上报"}
+              {node.virt && node.virt !== "none" ? ` · ${node.virt}` : ""}
+              {node.arch ? ` · ${node.arch}` : ""}
+            </span>
           </p>
         </div>
         {/* State right, identity left, one line each. */}

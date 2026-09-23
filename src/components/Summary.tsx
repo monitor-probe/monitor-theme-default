@@ -64,7 +64,8 @@ function Spark({ series }: { series: { values: number[]; className: string }[] }
   )
 }
 
-export function Summary({ nodes }: { nodes: Node[] }) {
+/** `group` picks the throughput series: null for every node, else the tab's group. */
+export function Summary({ nodes, group }: { nodes: Node[]; group: string | null }) {
   const online = nodes.filter((n) => n.online)
   const sum = (pick: (n: Node) => number) => nodes.reduce((total, n) => total + pick(n), 0)
 
@@ -77,7 +78,8 @@ export function Summary({ nodes }: { nodes: Node[] }) {
   const cpu = busiest?.metrics?.cpu ?? 0
   // The same push produced `nodes` and this sample, so the figure above the line
   // is that line's last point.
-  const now = speedHistory.at(-1) ?? { rx: 0, tx: 0 }
+  const history = speedHistory.get(group) ?? []
+  const now = history.at(-1) ?? { rx: 0, tx: 0 }
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -112,8 +114,8 @@ export function Summary({ nodes }: { nodes: Node[] }) {
         <div className="mt-auto pt-1">
           <Spark
             series={[
-              { values: speedHistory.map((s) => s.rx), className: "text-foreground" },
-              { values: speedHistory.map((s) => s.tx), className: "text-muted-foreground" },
+              { values: history.map((s) => s.rx), className: "text-foreground" },
+              { values: history.map((s) => s.tx), className: "text-muted-foreground" },
             ]}
           />
         </div>

@@ -29,6 +29,8 @@ export type Node = {
   online: boolean
   /** ISO 3166-1 alpha-2, or empty when the hub could not locate the address. */
   country: string
+  /** Set by the operator; empty is ungrouped. Absent from a hub predating groups. */
+  group?: string
   last_seen: number
   metrics: Metrics | null
   os: string
@@ -61,6 +63,11 @@ export type Node = {
   remark?: string
 }
 
+/** Every group in use, in the order of the first node carrying it: the operator's node order decides the tab order. */
+export function groupsOf(nodes: Pick<Node, "group">[]): string[] {
+  return [...new Set(nodes.map((n) => n.group ?? "").filter(Boolean))]
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -79,21 +86,37 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Fleet throughput, one sample per push. Held beside the stream that feeds it
- * rather than in the tile that draws it: the summary unmounts while a node page is
- * open, so a buffer held there would restart empty on every return. Two minutes at
- * the hub's push interval.
+ * Throughput, one sample per push, as a series for every node (null) and one per
+ * group ("" for the ungrouped), so the summary above a group tab draws that
+ * group's line rather than the fleet's. Held beside the stream that feeds it
+ * rather than in the tile that draws it: the summary unmounts while a node page
+ * is open, so a buffer held there would restart empty on every return. Two
+ * minutes at the hub's push interval; a group no node carries any more is
+ * dropped. Keyed null rather than by any string, since a group may be named
+ * anything, "*" included.
  */
 const KEEP = 60
-export const speedHistory: { rx: number; tx: number }[] = []
+export const speedHistory = new Map<string | null, { rx: number; tx: number }[]>()
 
-function sample(nodes: Node[]) {
-  const live = nodes.filter((n) => n.online && n.metrics)
-  speedHistory.push({
-    rx: live.reduce((s, n) => s + n.metrics!.net_rx, 0),
-    tx: live.reduce((s, n) => s + n.metrics!.net_tx, 0),
-  })
-  if (speedHistory.length > KEEP) speedHistory.shift()
+export function sample(nodes: Node[]) {
+  const totals = new Map<string | null, { rx: number; tx: number }>()
+  for (const n of nodes) {
+    for (const key of [null, n.group ?? ""]) {
+      const total = totals.get(key) ?? { rx: 0, tx: 0 }
+      if (n.online && n.metrics) {
+        total.rx += n.metrics.net_rx
+        total.tx += n.metrics.net_tx
+      }
+      totals.set(key, total)
+    }
+  }
+  for (const key of speedHistory.keys()) if (!totals.has(key)) speedHistory.delete(key)
+  for (const [key, total] of totals) {
+    const series = speedHistory.get(key) ?? []
+    series.push(total)
+    if (series.length > KEEP) series.shift()
+    speedHistory.set(key, series)
+  }
 }
 
 /** A malformed report must not remove every other node from the page. */

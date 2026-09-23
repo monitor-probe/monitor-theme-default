@@ -276,7 +276,11 @@ export function NodeDetail({ node }: { node: Node }) {
         row[`t${s.id}`] = p.latency
         row[`s${s.id}`] = smoothed[i]
         row[`l${s.id}`] = p.loss ?? 0
-        row[`b${s.id}`] = p.band ?? null
+        // A bucket with a single answer carries no band and spans only that
+        // answer. Left null, `connectNulls` would bridge the hours between the
+        // few buckets that have one: 2 to 10 of 1,440 in a day, the widest gap
+        // 803 minutes, drawn as one large wedge.
+        row[`b${s.id}`] = p.band ?? (p.latency === null ? null : [p.latency, p.latency])
         // Taken as the span of three filtered series rather than a pair: the two
         // edges are filtered independently, so a bucket that answered slightly
         // faster than usual can trip the low edge alone and come back above the
@@ -284,9 +288,9 @@ export function NodeDetail({ node }: { node: Node }) {
         // line outside it.
         const [low, high] = [lo[i], hi[i]]
         row[`c${s.id}`] =
-          p.band && low !== null && high !== null
-            ? [Math.min(low, high, smoothed[i] ?? low), Math.max(low, high, smoothed[i] ?? high)]
-            : null
+          low === null || high === null
+            ? null
+            : [Math.min(low, high, smoothed[i] ?? low), Math.max(low, high, smoothed[i] ?? high)]
         rows.set(p.ts, row)
       })
     }
@@ -441,8 +445,10 @@ export function NodeDetail({ node }: { node: Node }) {
                       // The line is drawn from what answered, so without this a
                       // bucket that lost most of its packets reads as normal.
                       // `dataKey` is `t7`/`s7`; the loss sits at `l7`.
-                      // 被削掉的样本带的是偶数窗口的中位数，落在两个整毫秒之间，
-                      // 因此取整。
+                      //
+                      // Rounded because a clipped sample carries the median of
+                      // an even window, which falls between two of the whole
+                      // milliseconds the hub stores.
                       formatter={(v, name, item) => {
                         const loss = Number(item?.payload?.[`l${String(item.dataKey).slice(1)}`] ?? 0)
                         return [`${Math.round(Number(v))} ms${loss > 0 ? ` · 丢 ${loss}%` : ""}`, name]

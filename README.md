@@ -36,7 +36,7 @@ npm run dev
     └── index.html
 ```
 
-`theme.json` 的字段均为字符串：
+`theme.json` 的字段除 `config` 外均为字符串：
 
 | 字段 | 含义 |
 |---|---|
@@ -46,6 +46,7 @@ npm run dev
 | `version` | 主题版本 |
 | `author` | 作者 |
 | `url` | 源码地址 |
+| `config` | 可选，站长在后台可调的设置，后台按它画表单 |
 
 每个 tag 的 release 里的 `theme.tar.gz` 解开就是这个目录——hub 构建时嵌入的是同一个包。
 
@@ -61,6 +62,9 @@ npm run dev
 | `GET /api/nodes` | 节点列表、实时指标和累计流量 |
 | `GET /api/nodes/{id}/metrics` | 历史指标和延迟记录 |
 | `GET /api/ws` | 每 2 秒推送一次节点快照的 WebSocket |
+| `GET /api/themes/{short}/config` | 站长在后台保存的主题设置 |
+
+`config` 的声明格式、读取接口的返回与约定见文档站的[主题开发](https://monitor-document.pages.dev/dev/theme#主题设置)。
 
 `metrics` 的三个查询参数都可省：
 

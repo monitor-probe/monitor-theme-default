@@ -5,7 +5,7 @@ import { NodeCard } from "@/components/NodeCard"
 import { Summary } from "@/components/Summary"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { api, useNodes, type Node } from "@/lib/api"
+import { api, groupsOf, useNodes, type Node } from "@/lib/api"
 
 type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean }
 
@@ -84,6 +84,8 @@ export default function App() {
   const [meError, setMeError] = useState("")
   const { nodes, error, closed } = useNodes()
   const [open, go] = useNodeRoute()
+  // The list's group tab, held here so it survives a visit to a node's page.
+  const [group, setGroup] = useState<string | null>(null)
 
   const loadMe = useCallback(() => {
     // `|| "..."` because an empty message reads as no error: api() falls back to
@@ -182,20 +184,63 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <>
-            <Summary nodes={sorted} />
-            {sorted.length === 0 ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">还没有节点</p>
-            ) : (
-              <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {sorted.map((n: Node) => (
-                  <NodeCard key={n.id} node={n} onOpen={() => go(n.id)} />
-                ))}
-              </div>
-            )}
-          </>
+          <NodeList nodes={sorted} group={group} onGroup={setGroup} onOpen={go} />
         )}
       </main>
     </div>
+  )
+}
+
+// Group tabs appear only once the operator has grouped something, so a hub
+// without groups keeps the page it always had. The summary follows the tab.
+function NodeList({ nodes, group, onGroup, onOpen }: {
+  nodes: Node[]
+  /** null is every node, "" the ungrouped. */
+  group: string | null
+  onGroup: (group: string | null) => void
+  onOpen: (id: number) => void
+}) {
+  const groups = groupsOf(nodes)
+  // A group that has since emptied or been renamed falls back to every node
+  // rather than to an empty page.
+  const current = group === null || group === "" || groups.includes(group) ? group : null
+  const shown = current === null ? nodes : nodes.filter((n) => (n.group ?? "") === current)
+  const ungrouped = nodes.filter((n) => !n.group).length
+  const tabs = [
+    [null, "全部", nodes.length] as const,
+    ...groups.map((g) => [g, g, nodes.filter((n) => n.group === g).length] as const),
+    ...(ungrouped ? [["", "未分组", ungrouped] as const] : []),
+  ]
+  return (
+    <>
+      {groups.length > 0 && (
+        <div role="tablist" aria-label="分组" className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
+          {tabs.map(([value, label, count]) => (
+            <Button
+              key={value ?? "*"}
+              role="tab"
+              aria-selected={current === value}
+              size="sm"
+              variant={current === value ? "secondary" : "ghost"}
+              className="shrink-0"
+              onClick={() => onGroup(value)}
+            >
+              {label}
+              <span className="tnum text-muted-foreground">{count}</span>
+            </Button>
+          ))}
+        </div>
+      )}
+      <Summary nodes={shown} group={current ?? "*"} />
+      {nodes.length === 0 ? (
+        <p className="py-16 text-center text-sm text-muted-foreground">还没有节点</p>
+      ) : (
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {shown.map((n) => (
+            <NodeCard key={n.id} node={n} onOpen={() => onOpen(n.id)} />
+          ))}
+        </div>
+      )}
+    </>
   )
 }

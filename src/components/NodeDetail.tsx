@@ -184,10 +184,7 @@ export function NodeDetail({ node }: { node: Node }) {
     )
       .then((next) => { if (active) setData(next) })
       .catch((e: Error) => {
-        // `|| "..."` as in App.tsx: HTTP/2 dropped statusText, so a bodiless
-        // failure from a proxy arrives as the empty string and renders as no
-        // error.
-        if (active) { setFailed(e.message || "网络错误"); setData({ metrics: [], ping: [], probes: {} }) }
+        if (active) { setFailed(e.message); setData({ metrics: [], ping: [], probes: {} }) }
       })
     return () => { active = false }
   }, [node.id, hours, tab])

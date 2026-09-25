@@ -175,7 +175,7 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
-            <h3 className="truncate font-medium">{node.name}</h3>
+            <h3 className="truncate font-medium" title={node.name}>{node.name}</h3>
             <Country node={node} />
           </div>
           <p className="mt-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">

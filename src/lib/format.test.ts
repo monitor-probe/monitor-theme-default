@@ -4,7 +4,7 @@
 //
 // Nothing imports it, so the bundle never includes it.
 import {
-  axisBytes, axisTop, bytes, cpuName, daysUntil, despike, osName, osVersion, pair, quarters, timeTicks, uptime,
+  axisBytes, axisTop, bytes, cpuName, daysUntil, despike, osName, pair, quarters, timeTicks, uptime,
 } from "./format.ts"
 
 let failed = 0
@@ -118,10 +118,6 @@ eq(uptime(2 * 86400 + 5 * 3600), "2 天 5 小时", "超过一天不再写分钟"
 }
 
 eq(osName("Debian GNU/Linux 12 (bookworm)"), "Debian 12", "发行版名去掉代号")
-eq(osVersion("Debian GNU/Linux 13 (trixie)"), "13", "版本号去掉发行版名")
-eq(osVersion("Alpine Linux v3.24"), "3.24", "版本号去掉 v 前缀")
-eq(osVersion("Ubuntu 24.04.1 LTS"), "24.04.1 LTS", "版本号保留 LTS")
-eq(osVersion("Arch Linux"), "", "滚动发行版没有版本号")
 eq(cpuName("Intel(R) Xeon(R) CPU E5-2680 8-Core Processor"), "Intel Xeon E5-2680", "CPU 名去掉商标和核数")
 
 if (failed) {

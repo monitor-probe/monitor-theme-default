@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Country, Status } from "@/components/NodeCard"
 import { api, type Node } from "@/lib/api"
 import {
-  axisBytes, axisTop, bytes, clockFor, despike, quarters, cpuName, CYCLES, FOREVER, money, osName, rate,
+  axisBytes, axisTop, bytes, clockFor, cycle, despike, quarters, cpuName, FOREVER, money, osName, rate,
   timeTicks,
 } from "@/lib/format"
 
@@ -365,7 +365,7 @@ export function NodeDetail({ node }: { node: Node }) {
           label="续费"
           value={[
             node.price > 0
-              ? `${money(node.price, node.currency)} / ${CYCLES[node.billing_cycle] ?? node.billing_cycle}`
+              ? `${money(node.price, node.currency)} / ${cycle(node.billing_cycle)}`
               : "免费",
             node.expires_at ? `${node.expires_at} 到期` : FOREVER,
           ].join(" · ")}

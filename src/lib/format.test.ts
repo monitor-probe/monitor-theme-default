@@ -4,7 +4,7 @@
 //
 // Nothing imports it, so the bundle never includes it.
 import {
-  axisBytes, axisTop, bytes, cpuName, daysUntil, despike, osName, pair, quarters, timeTicks, uptime,
+  axisBytes, axisTop, bytes, cpuName, cycle, daysUntil, despike, osName, pair, quarters, timeTicks, uptime,
 } from "./format.ts"
 
 let failed = 0
@@ -116,6 +116,9 @@ eq(uptime(2 * 86400 + 5 * 3600), "2 天 5 小时", "超过一天不再写分钟"
   // 下限不能低到把正常抖动也当成尖峰：整毫秒的数据里 1 ms 的起伏是常态。
   eq(despike([180, 181, 180, 180, 181, 180, 180]), [180, 181, 180, 180, 181, 180, 180], "1 ms 抖动原样保留")
 }
+
+// 旧 hub 存名称，新 hub 把其余长度存成 `<n>m`；两种写法同一个长度读法一致。
+eq(["yearly", "12m", "60m", "18m", "once", "weekly"].map(cycle), ["年付", "年付", "5 年付", "18 个月付", "一次性", "weekly"], "付款周期")
 
 eq(osName("Debian GNU/Linux 12 (bookworm)"), "Debian 12", "发行版名去掉代号")
 eq(cpuName("Intel(R) Xeon(R) CPU E5-2680 8-Core Processor"), "Intel Xeon E5-2680", "CPU 名去掉商标和核数")

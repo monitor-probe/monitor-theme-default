@@ -333,8 +333,8 @@ export function NodeDetail({ node }: { node: Node }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <h2 className="truncate text-lg font-medium">{node.name}</h2>
         <Country node={node} />
+        <h2 className="truncate text-lg font-medium">{node.name}</h2>
         <Status node={node} />
         {node.agent_version && (
           <Badge variant="outline" className="font-normal">

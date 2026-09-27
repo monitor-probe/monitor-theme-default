@@ -133,6 +133,15 @@ export function osName(name: string): string {
   return name.replace("GNU/Linux ", "").replace(/\s*\([^)]*\)\s*$/, "")
 }
 
+/**
+ * The release alone, for a line whose logo already names the distribution:
+ * everything from the first number on, "v" dropped. Empty for a rolling release
+ * such as Arch, which has no number to show.
+ */
+export function osVersion(name: string): string {
+  return osName(name).match(/\bv?(\d.*)$/)?.[1] ?? ""
+}
+
 export function cpuName(name: string): string {
   return name
     .replace(/\((R|TM|r|tm)\)/g, "")

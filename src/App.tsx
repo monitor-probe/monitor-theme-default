@@ -6,6 +6,7 @@ import { Summary } from "@/components/Summary"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { api, groupsOf, useNodes, type Node } from "@/lib/api"
+import { loadConfig } from "@/lib/config"
 
 type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean }
 
@@ -92,6 +93,7 @@ export default function App() {
   const [dark, toggleTheme] = useTheme()
   const [me, setMe] = useState<Me | null>(null)
   const [meError, setMeError] = useState("")
+  const [config, setConfig] = useState<Record<string, unknown> | null>(null)
   const { nodes, error, closed } = useNodes()
   const [open, go] = useNodeRoute()
   // The list's group tab, held here so it survives a visit to a node's page.
@@ -105,6 +107,9 @@ export default function App() {
 
   useEffect(() => {
     loadMe()
+    // Requested alongside /me, not after it. It never rejects: any failure
+    // yields the defaults.
+    void loadConfig().then(setConfig)
     // Warmed here rather than left to Suspense, which requests the chunk only
     // once a render reaches the detail view, itself waiting on /me. Without this
     // the split trades its first paint for a full-page skeleton over the first
@@ -136,7 +141,7 @@ export default function App() {
 
   // Only while there is nothing else to show. Once `me` has loaded, a later
   // failure belongs beside the page rather than over it.
-  if (!me) return (
+  if (!me || !config) return (
     <div className="grid min-h-svh place-items-center p-6 text-sm text-muted-foreground">
       {meError ? <div className="space-y-3 text-center"><p role="alert">加载失败：{meError}</p><Button onClick={loadMe}>重试</Button></div> : "加载中…"}
     </div>
@@ -190,7 +195,13 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <NodeList nodes={sorted} group={group} onGroup={setGroup} onOpen={go} />
+          <NodeList
+            nodes={sorted}
+            group={group}
+            summary={config.show_summary === true}
+            onGroup={setGroup}
+            onOpen={go}
+          />
         )}
       </main>
     </div>
@@ -199,10 +210,12 @@ export default function App() {
 
 // Group tabs appear only once the operator has grouped something, so a hub
 // without groups keeps the page it always had. The summary follows the tab.
-function NodeList({ nodes, group, onGroup, onOpen }: {
+function NodeList({ nodes, group, summary, onGroup, onOpen }: {
   nodes: Node[]
   /** null is every node, "" the ungrouped. */
   group: string | null
+  /** The operator's `show_summary` setting. */
+  summary: boolean
   onGroup: (group: string | null) => void
   onOpen: (id: number) => void
 }) {
@@ -242,7 +255,7 @@ function NodeList({ nodes, group, onGroup, onOpen }: {
           ))}
         </div>
       )}
-      <Summary nodes={shown} group={current} />
+      {summary && <Summary nodes={shown} group={current} />}
       {nodes.length === 0 ? (
         <p className="py-16 text-center text-sm text-muted-foreground">还没有节点</p>
       ) : (

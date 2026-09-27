@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Meter } from "@/components/Meter"
 import type { Node } from "@/lib/api"
-import { bytes, daysUntil, FOREVER, pair, percent, rate, uptime } from "@/lib/format"
+import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, uptime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 // Emitted as files and fetched on first use, so a page carries only the flags its
@@ -129,7 +129,7 @@ function OsIcon({ os }: { os: string }) {
       style={{ "--brand": `#${icon.hex}` } as CSSProperties}
       className="size-3 shrink-0 fill-(--brand) dark:fill-[color-mix(in_oklab,var(--brand)_60%,white)]"
     >
-      <title>{os}</title>
+      <title>{osName(os)}</title>
       <path d={icon.path} />
     </svg>
   )

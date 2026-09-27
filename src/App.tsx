@@ -141,7 +141,7 @@ export default function App() {
 
   // Only while there is nothing else to show. Once `me` has loaded, a later
   // failure belongs beside the page rather than over it.
-  if (!me || !config) return (
+  if (!me) return (
     <div className="grid min-h-svh place-items-center p-6 text-sm text-muted-foreground">
       {meError ? <div className="space-y-3 text-center"><p role="alert">加载失败：{meError}</p><Button onClick={loadMe}>重试</Button></div> : "加载中…"}
     </div>
@@ -188,7 +188,7 @@ export default function App() {
               节点不存在或未公开。<button className="underline" onClick={() => go(null)}>返回列表</button>
             </p>
           )
-        ) : !nodes ? (
+        ) : !nodes || !config ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[0, 1, 2].map((i) => (
               <Skeleton key={i} className="h-72" />

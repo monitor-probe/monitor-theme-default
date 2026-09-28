@@ -48,7 +48,10 @@
   --offline: oklch(0.52 0 0);
 }
 
+/* `color-scheme` draws the browser's own controls -- the checkbox,
+   scrollbars -- in the dark palette as well. */
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.2 0 0);

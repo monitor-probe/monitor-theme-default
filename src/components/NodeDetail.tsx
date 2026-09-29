@@ -10,7 +10,7 @@ import { Country, Status } from "@/components/NodeCard"
 import { api, type Node } from "@/lib/api"
 import {
   axisBytes, axisTop, bytes, clockFor, cycle, despike, quarters, cpuName, FOREVER, money, osName, rate,
-  timeTicks,
+  tickClock, timeTicks, windows,
 } from "@/lib/format"
 
 type Point = {
@@ -46,18 +46,6 @@ type Probes = Record<string, string>
  * regardless of what the probe does.
  */
 type Loss = Record<string, number>
-
-const RANGES = [
-  { hours: 1, label: "1 小时" },
-  { hours: 6, label: "6 小时" },
-  { hours: 24, label: "24 小时" },
-  { hours: 168, label: "7 天" },
-]
-
-// Latency stops at a day. A week-wide bucket would still carry the spread and the
-// loss figure, but a week of probe history is outside this page's purpose, and
-// these are the windows in which every ping remains on the chart.
-const RANGES_FOR = { resources: RANGES, latency: RANGES.filter((r) => r.hours <= 24) }
 
 const AXIS = { stroke: "currentColor", fontSize: 11, tickLine: false, axisLine: false }
 
@@ -100,11 +88,18 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   )
 }
 
-function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: string }) {
+// `narrow` tightens the padding on a phone, so the seven windows of a year of
+// history fit one row of a 360px screen.
+function Tab({ active, onClick, narrow = false, children }: {
+  active: boolean
+  onClick: () => void
+  narrow?: boolean
+  children: string
+}) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-md px-2.5 py-1 text-xs transition-colors ${
+      className={`rounded-md py-1 text-xs transition-colors ${narrow ? "px-1.5 sm:px-2.5" : "px-2.5"} ${
         active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
       }`}
     >
@@ -140,12 +135,19 @@ function Fact({ label, value }: { label: string; value?: string | number | null 
   )
 }
 
-export function NodeDetail({ node }: { node: Node }) {
+/**
+ * `historyDays` is how far back the hub keeps history. Both tabs offer every
+ * window within it: up to a day each ping is on the latency chart, and past it a
+ * point is a bucket -- its median, the range its answers spanned and the share
+ * lost -- which over a month shows a route's evening pattern a day cannot.
+ */
+export function NodeDetail({ node, historyDays }: { node: Node; historyDays: number }) {
+  const ranges = useMemo(() => windows(historyDays), [historyDays])
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("resources")
   // Each tab keeps its own range: a 7-day trend and a 1-hour trace answer
   // different questions.
-  const [ranges, setRanges] = useState({ resources: 6, latency: 6 })
-  const hours = ranges[tab]
+  const [picked, setPicked] = useState({ resources: 6, latency: 6 })
+  const hours = picked[tab]
   const [smooth, setSmooth] = useState(false)
   // Probes switched off. Hiding a slow one is what makes the fast ones readable,
   // as the axis rescales to what remains.
@@ -318,17 +320,20 @@ export function NodeDetail({ node }: { node: Node }) {
   // A real time axis rather than the category axis recharts defaults to: on a
   // category axis ticks are selected by index, so a period the agent was offline
   // for collapses to nothing.
-  const timeAxis = (rows: { ts: number }[], from = 0, to = rows.length - 1) => ({
-    dataKey: "ts",
-    type: "number" as const,
-    domain: ["dataMin", "dataMax"] as const,
+  const timeAxis = (rows: { ts: number }[], from = 0, to = rows.length - 1) => {
     // Explicit, or recharts places them at 05:14 and 10:22. Any that still collide
     // are dropped by `minTickGap`.
-    ticks: rows.length ? timeTicks(rows[from].ts, rows[to].ts) : undefined,
-    tickFormatter: clockFor(hours),
-    minTickGap: hours > 24 ? 72 : 40,
-    ...AXIS,
-  })
+    const ticks = rows.length ? timeTicks(rows[from].ts, rows[to].ts) : []
+    return {
+      dataKey: "ts",
+      type: "number" as const,
+      domain: ["dataMin", "dataMax"] as const,
+      ticks,
+      tickFormatter: tickClock(ticks, hours),
+      minTickGap: hours > 24 ? 72 : 40,
+      ...AXIS,
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -385,12 +390,14 @@ export function NodeDetail({ node }: { node: Node }) {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div className="flex gap-1">
-            {RANGES_FOR[tab].map((r) => (
+          {/* Wraps on a screen narrower than the seven windows of a year. */}
+          <div className="flex flex-wrap gap-1">
+            {ranges.map((r) => (
               <Tab
                 key={r.hours}
+                narrow
                 active={hours === r.hours}
-                onClick={() => setRanges((all) => ({ ...all, [tab]: r.hours }))}
+                onClick={() => setPicked((all) => ({ ...all, [tab]: r.hours }))}
               >
                 {r.label}
               </Tab>

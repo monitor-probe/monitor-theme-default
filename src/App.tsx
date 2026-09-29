@@ -8,7 +8,9 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { api, groupsOf, useNodes, type Node } from "@/lib/api"
 import { loadConfig } from "@/lib/config"
 
-type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean }
+// `history_days` is absent from hubs predating the hourly tier, which kept a
+// week for anonymous callers.
+type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean; history_days?: number }
 
 // Split out because recharts is most of this bundle and the list page draws no
 // chart. The landing page is 242 kB rather than 629 kB (77 kB gzipped against
@@ -181,7 +183,7 @@ export default function App() {
             <Skeleton className="h-96" />
           ) : selected ? (
             <Suspense fallback={<Skeleton className="h-96" />}>
-              <NodeDetail node={selected} />
+              <NodeDetail node={selected} historyDays={me.history_days ?? 7} />
             </Suspense>
           ) : (
             <p className="py-16 text-center text-sm text-muted-foreground">

@@ -91,6 +91,18 @@ for (const max of [3_000, 300_000, 3_000_000, 300_000_000]) {
     eq(wide.length >= 3 && wide.length <= 8, true, `${days} 天窗 3 到 8 个刻度（得到 ${wide.length}）`)
     eq(wide.every(midnight), true, `${days} 天窗的刻度落在零点`)
   }
+  // The zone above may have no daylight saving; New York changes on 8 March and
+  // 1 November 2026.
+  const zone = process.env.TZ
+  process.env.TZ = "America/New_York"
+  for (const end of [new Date(2026, 2, 25).getTime(), new Date(2026, 10, 20).getTime()]) {
+    for (const days of [30, 90]) {
+      const label = `纽约 ${new Date(end).getMonth() + 1} 月止的 ${days} 天窗跨夏令时仍落在零点`
+      eq(timeTicks(end - days * day, end).every(midnight), true, label)
+    }
+  }
+  if (zone === undefined) delete process.env.TZ
+  else process.env.TZ = zone
   eq(timeTicks(to - 365 * day, to).every((t) => new Date(t).getDate() === 1), true, "一年窗的刻度落在每月 1 日")
   const october = new Date(2026, 9, 1).getTime()
   eq(tickClock(timeTicks(to - 365 * day, to), 8760)(october), "10/01", "全在零点的刻度只写日期")

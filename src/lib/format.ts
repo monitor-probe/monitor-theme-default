@@ -196,7 +196,12 @@ export function timeTicks(from: number, to: number, count = 8): number[] {
   if (step === undefined) return monthTicks(from, to, count)
   const zone = new Date(from).getTimezoneOffset() * 60_000
   const ticks: number[] = []
-  for (let t = Math.ceil((from - zone) / step) * step + zone; t <= to; t += step) ticks.push(t)
+  for (let t = Math.ceil((from - zone) / step) * step + zone; t <= to; t += step) {
+    // Past a daylight-saving change a step of days lands an hour off midnight,
+    // so each such tick is set back on the nearest one.
+    const tick = step < 86_400_000 ? t : new Date(t + 43_200_000).setHours(0, 0, 0, 0)
+    if (tick <= to) ticks.push(tick)
+  }
   return ticks
 }
 

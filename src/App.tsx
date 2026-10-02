@@ -13,8 +13,8 @@ import { loadConfig } from "@/lib/config"
 type Me = { authed: boolean; github: boolean; site_name: string; public_page: boolean; history_days?: number }
 
 // Split out because recharts is most of this bundle and the list page draws no
-// chart. The landing page is 242 kB rather than 629 kB (77 kB gzipped against
-// 188 kB), with the rest fetched immediately after it paints.
+// chart. The landing page is 288 kB rather than 678 kB (95 kB gzipped against
+// 207 kB), with the rest fetched immediately after it paints.
 const loadDetail = () => import("@/components/NodeDetail").then((m) => ({ default: m.NodeDetail }))
 const NodeDetail = lazy(loadDetail)
 
@@ -35,7 +35,10 @@ function useNodeRoute() {
   return [
     id,
     (next: number | null) => {
-      history.pushState({}, "", next === null ? "/" : `/node/${next}`)
+      const path = next === null ? "/" : `/node/${next}`
+      // The site name leads to the list from the list as well, and each repeat
+      // would otherwise cost one more press of back.
+      if (location.pathname !== path) history.pushState({}, "", path)
       setId(next)
       scrollTo(0, 0)
     },

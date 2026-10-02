@@ -79,7 +79,6 @@ export function Status({ node }: { node: Node }) {
     // Muted once it stops reporting: the figures on the page are genuine, merely
     // no longer current.
     <Badge
-      variant="outline"
       className={cn("tnum shrink-0 gap-1.5 font-normal", !node.online && "text-muted-foreground")}
     >
       <span
@@ -99,7 +98,7 @@ export function Country({ node }: { node: Node }) {
   const src = FLAGS[node.country]
   if (!src) {
     return (
-      <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
+      <Badge className="shrink-0 font-normal text-muted-foreground">
         {node.country}
       </Badge>
     )

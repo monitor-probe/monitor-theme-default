@@ -8,7 +8,6 @@
 @import "tailwindcss" source(none);
 @source "../index.html";
 @source "../src";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -18,8 +17,6 @@
   --foreground: oklch(0.18 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0 0);
   --primary: oklch(0.18 0 0);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0 0);
@@ -30,15 +27,15 @@
   --accent-foreground: oklch(0.18 0 0);
   --destructive: oklch(0.3 0 0);
   --border: oklch(0.9 0 0);
-  --input: oklch(0.9 0 0);
   --ring: oklch(0.62 0 0);
   --chart-1: oklch(0.3 0 0);
   --chart-2: oklch(0.45 0 0);
   --chart-3: oklch(0.58 0 0);
   --chart-4: oklch(0.7 0 0);
   --chart-5: oklch(0.82 0 0);
-  /* Greyscale has no red or amber, so severity is carried by weight: the bar
-     darkens as it fills. */
+  /* Greyscale has no green or amber, so lightness carries both: --ok draws the
+     download line, lighter than the upload's --chart-1, and --warn an expiry
+     within a week, darker than the muted text beside it. */
   --ok: oklch(0.62 0 0);
   --warn: oklch(0.44 0 0);
   /* The status dot. Each clears 3:1 against the card (3.7 and 5.5), and 1.5:1
@@ -56,8 +53,6 @@
   --foreground: oklch(0.98 0 0);
   --card: oklch(0.2 0 0);
   --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.98 0 0);
   --primary: oklch(0.92 0 0);
   --primary-foreground: oklch(0.2 0 0);
   --secondary: oklch(0.27 0 0);
@@ -68,14 +63,13 @@
   --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.95 0 0);
   --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.55 0 0);
   --chart-1: oklch(0.95 0 0);
   --chart-2: oklch(0.82 0 0);
   --chart-3: oklch(0.68 0 0);
   --chart-4: oklch(0.54 0 0);
   --chart-5: oklch(0.42 0 0);
-  /* Inverted against the dark ground: the fuller the bar, the brighter. */
+  /* Inverted against the dark ground: --warn is brighter than the muted text. */
   --ok: oklch(0.62 0 0);
   --warn: oklch(0.79 0 0);
   /* 7.8 and 3.7 against the card, 2.1 apart. The muted grey would sit 1.15 from
@@ -93,8 +87,6 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -105,7 +97,6 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
-  --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);

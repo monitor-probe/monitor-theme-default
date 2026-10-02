@@ -177,7 +177,7 @@ export function useNodes() {
     let socket: WebSocket | null = null
     let poll: ReturnType<typeof setInterval> | null = null
     let retry: ReturnType<typeof setTimeout> | null = null
-    let closed = false
+    let stopped = false
 
     const receive = (list: Node[]) => {
       const safe = safeNodes(list)
@@ -200,7 +200,7 @@ export function useNodes() {
     const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/ws`
     // A hub restart closes every stream. Without reconnecting, a page that
     // outlives a deploy would remain on the fallback poll for the rest of its
-    // life, refreshing at a fifth of the live rate with no indication.
+    // life, refreshing every 5 seconds rather than 2 with no indication.
     const connect = () => {
       try {
         socket = new WebSocket(url)
@@ -218,7 +218,7 @@ export function useNodes() {
       }
       socket.onerror = () => socket?.close()
       socket.onclose = () => {
-        if (closed) return
+        if (stopped) return
         poll ??= setInterval(fetchOnce, 5000)
         retry = setTimeout(connect, 5000)
       }
@@ -226,7 +226,7 @@ export function useNodes() {
     connect()
 
     return () => {
-      closed = true
+      stopped = true
       socket?.close()
       if (poll) clearInterval(poll)
       if (retry) clearTimeout(retry)

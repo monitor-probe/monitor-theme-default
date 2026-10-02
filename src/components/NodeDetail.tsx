@@ -54,6 +54,11 @@ const AXIS = { stroke: "currentColor", fontSize: 11, tickLine: false, axisLine: 
 // chart across seven hundred points per probe.
 const SERIES = { dot: false as const, strokeWidth: 1.5, isAnimationActive: false }
 
+// Nor does the tooltip slide. Entering a chart at its right edge, it appears
+// beside the cursor first and would glide 400 ms back within the chart,
+// overhanging the page by up to 140 px and flashing a horizontal scrollbar.
+const TOOLTIP = { isAnimationActive: false }
+
 // One width for every stacked panel's value axis. Sized to their own labels --
 // 40px under "100%", 68px under "172 MB" -- the four plot areas would be offset by
 // 28px, placing a CPU spike and the network spike that caused it at different x.
@@ -477,6 +482,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                         far from it, and zero flattens every wobble. */}
                     <YAxis unit="ms" width={52} domain={["auto", "auto"]} {...AXIS} />
                     <Tooltip
+                      {...TOOLTIP}
                       labelFormatter={(ts) => new Date(Number(ts)).toLocaleString("zh-CN")}
                       // The line is drawn from what answered, so without this a
                       // bucket that lost most of its packets reads as normal.
@@ -596,6 +602,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(metricRows)} />
                 <YAxis {...axes.cpu} unit="%" {...VALUE_AXIS} />
                 <Tooltip
+                  {...TOOLTIP}
                   labelFormatter={(ts) => new Date(Number(ts)).toLocaleString("zh-CN")}
                   formatter={(v) => [`${Number(v).toFixed(1)}%`, "CPU"]}
                   contentStyle={{ fontSize: 12 }}
@@ -617,6 +624,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(metricRows)} />
                 <YAxis domain={[0, node.mem_total]} ticks={quarters(node.mem_total)} tickFormatter={axisBytes} {...VALUE_AXIS} />
                 <Tooltip
+                  {...TOOLTIP}
                   labelFormatter={(ts) => new Date(Number(ts)).toLocaleString("zh-CN")}
                   formatter={(v) => bytes(Number(v))}
                   contentStyle={{ fontSize: 12 }}
@@ -649,6 +657,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(metricRows)} />
                 <YAxis scale="log" {...axes.rate} tickFormatter={axisBytes} unit="/s" {...VALUE_AXIS} />
                 <Tooltip
+                  {...TOOLTIP}
                   labelFormatter={(ts) => new Date(Number(ts)).toLocaleString("zh-CN")}
                   // The hub's figures rather than `v`, which is lifted to the
                   // axis floor.
@@ -692,6 +701,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(metricRows)} />
                 <YAxis domain={[0, node.disk_total]} ticks={quarters(node.disk_total)} tickFormatter={axisBytes} {...VALUE_AXIS} />
                 <Tooltip
+                  {...TOOLTIP}
                   labelFormatter={(ts) => new Date(Number(ts)).toLocaleString("zh-CN")}
                   formatter={(v) => bytes(Number(v))}
                   contentStyle={{ fontSize: 12 }}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import {
   Area, AreaChart, Brush, CartesianGrid, ComposedChart, Line, ResponsiveContainer,
-  Tooltip, XAxis, YAxis,
+  Tooltip, XAxis, YAxis, type DotItemDotProps,
 } from "recharts"
 
 import { Badge } from "@/components/ui/badge"
@@ -53,6 +53,17 @@ const AXIS = { stroke: "currentColor", fontSize: 11, tickLine: false, axisLine: 
 // every range change, on a page meant to be read at a glance, and on the latency
 // chart across seven hundred points per probe.
 const SERIES = { dot: false as const, strokeWidth: 1.5, isAnimationActive: false }
+
+// A resource chart's series. A row with a gap on either side has no neighbour to
+// draw a line to, so it is marked with a dot; without one, a node back for a
+// single bucket after a stretch offline would not show at all.
+const RESOURCE_SERIES = {
+  ...SERIES,
+  dot: ({ cx, cy, index, points, stroke }: DotItemDotProps) =>
+    cy == null || points[index - 1]?.y != null || points[index + 1]?.y != null ? null : (
+      <circle cx={cx} cy={cy} r={2} fill={stroke} />
+    ),
+}
 
 // Nor does the tooltip slide. Entering a chart at its right edge, it appears
 // beside the cursor first and would glide 400 ms back within the chart,
@@ -614,7 +625,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(chartRows)} />
                 <YAxis {...axes.cpu} unit="%" {...VALUE_AXIS} />
                 <Tooltip {...TOOLTIP} formatter={(v) => [`${Number(v).toFixed(1)}%`, "CPU"]} />
-                <Area dataKey="cpu" stroke="var(--color-chart-1)" fill="var(--color-chart-1)" fillOpacity={0.15} {...SERIES} />
+                <Area dataKey="cpu" stroke="var(--color-chart-1)" fill="var(--color-chart-1)" fillOpacity={0.15} {...RESOURCE_SERIES} />
               </AreaChart>
             </ResponsiveContainer>
           </Panel>
@@ -631,7 +642,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(chartRows)} />
                 <YAxis domain={[0, node.mem_total]} ticks={quarters(node.mem_total)} tickFormatter={axisBytes} {...VALUE_AXIS} />
                 <Tooltip {...TOOLTIP} formatter={(v) => bytes(Number(v))} />
-                <Area dataKey="mem_used" name="内存" stroke="var(--color-chart-2)" fill="var(--color-chart-2)" fillOpacity={0.15} {...SERIES} />
+                <Area dataKey="mem_used" name="内存" stroke="var(--color-chart-2)" fill="var(--color-chart-2)" fillOpacity={0.15} {...RESOURCE_SERIES} />
               </AreaChart>
             </ResponsiveContainer>
           </Panel>
@@ -685,8 +696,8 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                     legendType="none"
                   />
                 ))}
-                <Line dataKey="rx" name="下行" stroke="var(--color-ok)" {...SERIES} />
-                <Line dataKey="tx" name="上行" stroke="var(--color-chart-1)" {...SERIES} />
+                <Line dataKey="rx" name="下行" stroke="var(--color-ok)" {...RESOURCE_SERIES} />
+                <Line dataKey="tx" name="上行" stroke="var(--color-chart-1)" {...RESOURCE_SERIES} />
               </ComposedChart>
             </ResponsiveContainer>
           </Panel>
@@ -701,7 +712,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                 <XAxis {...timeAxis(chartRows)} />
                 <YAxis domain={[0, node.disk_total]} ticks={quarters(node.disk_total)} tickFormatter={axisBytes} {...VALUE_AXIS} />
                 <Tooltip {...TOOLTIP} formatter={(v) => bytes(Number(v))} />
-                <Area dataKey="disk_used" name="硬盘" stroke="var(--color-chart-2)" fill="var(--color-chart-2)" fillOpacity={0.15} {...SERIES} />
+                <Area dataKey="disk_used" name="硬盘" stroke="var(--color-chart-2)" fill="var(--color-chart-2)" fillOpacity={0.15} {...RESOURCE_SERIES} />
               </AreaChart>
             </ResponsiveContainer>
           </Panel>

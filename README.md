@@ -86,6 +86,7 @@ MONITOR_HUB=https://hub.example.com npm run dev
 本主题用 `/node/{id}` 作为详情页。hub 的回落对它够用，但**hub 前面若有按路径做正向白名单的反代
 或 WAF，得把这个前缀放行**：从列表点进去只是 pushState，边缘看不见，刷新详情页才会真的请求
 `/node/{id}`，症状是「点进去正常，一刷新就被拦」。
+图标 `/favicon.svg` 和 `/apple-touch-icon.png` 同样要放行，后者被拦时 iOS 收藏和添加到主屏幕都没有图标。
 
 ## 许可
 

@@ -185,6 +185,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
   // -- it caps how many history windows it builds concurrently. Rendered as an
   // empty window, a 503 would misdirect the reader.
   const [failed, setFailed] = useState("")
+  const [attempt, setAttempt] = useState(0)
   // Where the brush has been dragged, so the axis reticks for the visible span
   // rather than retaining the whole window's ticks.
   const [zoom, setZoom] = useState<[number, number] | null>(null)
@@ -219,7 +220,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
         if (active) { setFailed(e.message); setData({ metrics: [], ping: [], probes: {} }) }
       })
     return () => { active = false }
-  }, [node.id, hours, tab])
+  }, [node.id, hours, tab, attempt])
 
   const m = node.metrics
   // One series per probe that reported, labelled from the names the samples
@@ -460,7 +461,10 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
       {!data ? (
         <Skeleton className="h-40 w-full" />
       ) : failed ? (
-        <p className="py-8 text-center text-sm text-destructive" role="alert">读取历史数据失败：{failed}</p>
+        <p className="py-8 text-center text-sm text-destructive" role="alert">
+          读取历史数据失败：{failed}
+          <button className="ml-2 underline" onClick={() => setAttempt((n) => n + 1)}>重试</button>
+        </p>
       ) : tab === "latency" ? (
         pingSeries.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">这段时间没有延迟数据</p>

@@ -96,10 +96,21 @@ async function failure(res: Response): Promise<ApiError> {
   )
 }
 
+/**
+ * How long a request may go unanswered. A connection that died without closing,
+ * as when a NAT on a phone's path forgets it, holds a request sent over it until
+ * TCP gives up: still pending after 300 s in Chrome over HTTP/1.1, which nginx
+ * serves unless configured for HTTP/2. Over HTTP/2 Chrome abandons the dead
+ * connection after 10 s itself. Healthy, the slowest request here, a node's
+ * history, answers within 3 s on 4G.
+ */
+const TIMEOUT = 20_000
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
     res = await fetch(`/api${path}`, {
+      signal: AbortSignal.timeout(TIMEOUT),
       ...init,
       headers: init?.body ? { "content-type": "application/json", ...init?.headers } : init?.headers,
     })

@@ -59,7 +59,7 @@ MONITOR_HUB=https://hub.example.com npm run dev
 | `GET /api/me` | 站点名、登录状态、公开页开关、历史保留天数 |
 | `GET /api/nodes` | 节点列表、实时指标和累计流量 |
 | `GET /api/nodes/{id}/metrics` | 历史指标和延迟记录 |
-| `GET /api/ws` | 每 2 秒推送一次节点快照的 WebSocket |
+| `GET /api/ws` | 每 2 秒推送一次节点快照的 WebSocket；带 `?gzip` 时每帧 gzip 后以二进制消息发出 |
 | `GET /api/themes/{short}/config` | 站长改过的主题设置，只含与默认值不同的项 |
 
 主题自带设置界面时，站长登录后可以 `PUT` 同一地址保存。`config` 的声明格式、两个接口的规则与约定见文档站的[主题开发](https://monitor-document.pages.dev/dev/theme#主题设置)。

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Meter } from "@/components/Meter"
 import type { Node } from "@/lib/api"
-import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, uptime } from "@/lib/format"
+import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, sinceSeen, uptime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 // Emitted as files and fetched on first use, so a page carries only the flags its
@@ -69,7 +69,7 @@ function deployed(node: Node) {
  * durations, so the badge keeps its shape either way.
  */
 export function Status({ node }: { node: Node }) {
-  const down = node.last_seen ? Date.now() / 1000 - node.last_seen : 0
+  const down = sinceSeen(node)
   const label = node.online
     ? `在线 ${node.metrics ? uptime(node.metrics.uptime) : ""}`
     : deployed(node)

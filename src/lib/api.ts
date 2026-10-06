@@ -177,10 +177,19 @@ export function useNodes() {
     let socket: WebSocket | null = null
     let poll: ReturnType<typeof setInterval> | null = null
     let retry: ReturnType<typeof setTimeout> | null = null
+    let silent: ReturnType<typeof setTimeout> | null = null
     let stopped = false
 
+    // Set by `resume`. The throughput line is drawn by position, one point per
+    // push, so the samples from before the page was hidden, or the stream went
+    // silent, would join the new ones as if no time had passed in between. They
+    // are dropped on the first arrival rather than at once, which would read as
+    // 0 B/s beside figures that are merely stale.
+    let gap = false
     const receive = (list: Node[]) => {
       const safe = safeNodes(list)
+      if (gap) speedHistory.clear()
+      gap = false
       sample(safe)
       setNodes(safe)
       setError(null)
@@ -216,7 +225,24 @@ export function useNodes() {
         return
       }
       socket = opened
+      // Re-armed by every frame. Five of the hub's two-second pushes without one
+      // mean the connection died without closing, as when a phone moves between
+      // networks; the browser sends nothing on it and would notice only when TCP
+      // keepalive gives up, 450 s later in Chrome. The stream is replaced rather
+      // than closed and awaited: on a dead connection the close event arrives
+      // only after the 60 s closing handshake times out. The notice stays until
+      // data arrives, since with no network the fetch started alongside may hang
+      // rather than fail.
+      const watch = () => {
+        if (silent) clearTimeout(silent)
+        silent = setTimeout(() => {
+          setError("实时数据中断，正在重新连接")
+          resume()
+        }, 10_000)
+      }
+      watch()
       opened.onmessage = (event) => {
+        watch()
         receive(JSON.parse(event.data).nodes)
         // The stream has returned; the poll was only covering for it.
         if (poll) {
@@ -226,6 +252,7 @@ export function useNodes() {
       }
       opened.onerror = () => opened.close()
       opened.onclose = () => {
+        if (silent) clearTimeout(silent)
         if (stopped) return
         poll ??= setInterval(fetchOnce, 5000)
         retry = setTimeout(connect, 5000)
@@ -247,14 +274,12 @@ export function useNodes() {
       }
       if (poll) clearInterval(poll)
       if (retry) clearTimeout(retry)
-      poll = retry = null
+      if (silent) clearTimeout(silent)
+      poll = retry = silent = null
     }
     const resume = () => {
       pause()
-      // The throughput line is drawn by position, one point per push, so the
-      // samples from before the page was hidden would join the new ones as if no
-      // time had passed in between.
-      speedHistory.clear()
+      gap = true
       fetchOnce()
       connect()
     }

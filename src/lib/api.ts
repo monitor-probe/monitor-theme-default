@@ -178,7 +178,6 @@ export function useNodes() {
     let poll: ReturnType<typeof setInterval> | null = null
     let retry: ReturnType<typeof setTimeout> | null = null
     let silent: ReturnType<typeof setTimeout> | null = null
-    let stopped = false
 
     // Set by `resume`. The throughput line is drawn by position, one point per
     // push, so the samples from before the page was hidden, or the stream went
@@ -253,7 +252,6 @@ export function useNodes() {
       opened.onerror = () => opened.close()
       opened.onclose = () => {
         if (silent) clearTimeout(silent)
-        if (stopped) return
         poll ??= setInterval(fetchOnce, 5000)
         retry = setTimeout(connect, 5000)
       }
@@ -288,7 +286,6 @@ export function useNodes() {
     resume()
 
     return () => {
-      stopped = true
       document.removeEventListener("visibilitychange", visibility)
       pause()
     }

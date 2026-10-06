@@ -251,6 +251,10 @@ export function useNodes() {
     }
     const resume = () => {
       pause()
+      // The throughput line is drawn by position, one point per push, so the
+      // samples from before the page was hidden would join the new ones as if no
+      // time had passed in between.
+      speedHistory.clear()
       fetchOnce()
       connect()
     }

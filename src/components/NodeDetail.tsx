@@ -315,10 +315,8 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
   // change, which they do not. Hiding a probe or enabling despiking therefore
   // selects a `dataKey` rather than rebuilding the array.
   const pingRows = useMemo(() => {
-    const rows = new Map<
-      number,
-      { ts: number } & Record<string, number | [number, number] | null>
-    >()
+    type Row = { ts: number } & Record<string, number | [number, number] | null>
+    const rows = new Map<number, Row>()
     for (const s of pingSeries) {
       const windowSize = despikeWindow(s.points)
       const smoothed = despike(s.points.map((p) => p.latency), windowSize)
@@ -329,7 +327,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
       const lo = despike(s.points.map((p) => p.band?.[0] ?? p.latency), windowSize)
       const hi = despike(s.points.map((p) => p.band?.[1] ?? p.latency), windowSize)
       s.points.forEach((p, i) => {
-        const row = rows.get(p.ts) ?? { ts: p.ts * 1_000 }
+        const row: Row = rows.get(p.ts) ?? { ts: p.ts * 1_000 }
         row[`t${s.id}`] = p.latency
         row[`s${s.id}`] = smoothed[i]
         row[`l${s.id}`] = p.loss ?? 0

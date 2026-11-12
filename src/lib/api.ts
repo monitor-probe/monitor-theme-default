@@ -122,7 +122,6 @@ export async function api<T>(path: string): Promise<T> {
     try {
       const res = await fetch(`/api${path}`, { signal: AbortSignal.timeout(TIMEOUT) })
       if (!res.ok) throw await failure(res)
-      if (res.status === 204) return undefined as T
       // A 200 carrying HTML is a proxy's page, not the hub's JSON.
       return await res.json().catch((e) => {
         throw e instanceof SyntaxError ? new ApiError(res.status, "收到的不是状态数据，稍后再试") : e

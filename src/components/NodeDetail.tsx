@@ -47,6 +47,8 @@ type Probes = Record<string, string>
  */
 type Loss = Record<string, number>
 
+type History = { metrics: Point[]; ping: PingPoint[]; probes: Probes; loss?: Loss }
+
 const AXIS = { stroke: "currentColor", fontSize: 11, tickLine: false, axisLine: false }
 
 // No grow-in animation: it would spend 1.5 s drawing a line across the panel on
@@ -179,29 +181,28 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
   // Probes switched off. Hiding a slow one is what makes the fast ones readable,
   // as the axis rescales to what remains.
   const [hiddenProbes, setHiddenProbes] = useState<number[]>([])
-  const [data, setData] = useState<{ metrics: Point[]; ping: PingPoint[]; probes: Probes; loss?: Loss } | null>(null)
-  // Retained rather than folded into an empty result: a refused request and an
-  // empty window are different answers, and the hub has reason to refuse this one
-  // -- it caps how many history windows it builds concurrently. Rendered as an
-  // empty window, a 503 would misdirect the reader.
-  const [failed, setFailed] = useState("")
   const [attempt, setAttempt] = useState(0)
+  const query = `${node.id}/${hours}/${tab}/${attempt}`
+  // Each answer is held with the request it answers, so the charts never draw
+  // the old range while the new one is in flight, nor an answer that lands after
+  // its request was abandoned.
+  //
+  // `failed` is retained rather than folded into an empty result: a refused
+  // request and an empty window are different answers, and the hub has reason to
+  // refuse this one -- it caps how many history windows it builds concurrently.
+  // Rendered as an empty window, a 503 would misdirect the reader.
+  const [answer, setAnswer] = useState<{ query: string; data: History; failed: string } | null>(null)
+  const data = answer?.query === query ? answer.data : null
+  const failed = answer?.query === query ? answer.failed : ""
   // Where the brush has been dragged, so the axis reticks for the visible span
-  // rather than retaining the whole window's ticks.
-  const [zoom, setZoom] = useState<[number, number] | null>(null)
+  // rather than retaining the whole window's ticks. A new request starts unzoomed.
+  const [zoomed, setZoomed] = useState<{ query: string; range: [number, number] } | null>(null)
+  const zoom = zoomed?.query === query ? zoomed.range : null
   // Where the chart begins on screen, so its height can occupy the remainder.
   const [chartTop, setChartTop] = useState(0)
 
   useEffect(() => {
     let active = true
-    // The charts must not continue drawing the old range while the new one is in
-    // flight.
-    // oxlint-disable-next-line react/set-state-in-effect
-    setData(null)
-    // oxlint-disable-next-line react/set-state-in-effect
-    setZoom(null)
-    // oxlint-disable-next-line react/set-state-in-effect
-    setFailed("")
     // What this screen can resolve, in device pixels, which is the unit the line
     // is drawn in: a 1280-wide retina panel has 2560 of them for a day of minutes.
     // Read here rather than from a ref, since the hub only thins further, an
@@ -212,15 +213,13 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
     // to two thirds of every response and was never drawn.
     const points = Math.round(globalThis.innerWidth * (globalThis.devicePixelRatio || 1))
     const series = tab === "latency" ? "ping" : "metrics"
-    api<{ metrics: Point[]; ping: PingPoint[]; probes: Probes; loss?: Loss }>(
-      `/nodes/${node.id}/metrics?hours=${hours}&points=${points}&series=${series}`,
-    )
-      .then((next) => { if (active) setData(next) })
+    api<History>(`/nodes/${node.id}/metrics?hours=${hours}&points=${points}&series=${series}`)
+      .then((next) => { if (active) setAnswer({ query, data: next, failed: "" }) })
       .catch((e: Error) => {
-        if (active) { setFailed(e.message); setData({ metrics: [], ping: [], probes: {} }) }
+        if (active) setAnswer({ query, data: { metrics: [], ping: [], probes: {} }, failed: e.message })
       })
     return () => { active = false }
-  }, [node.id, hours, tab, attempt])
+  }, [query, node.id, hours, tab])
 
   const m = node.metrics
   // One series per probe that reported, labelled from the names the samples
@@ -563,7 +562,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                       tickFormatter={clockFor(hours)}
                       className="fill-muted"
                       stroke="var(--color-muted-foreground)"
-                      onChange={(r) => setZoom([r.startIndex ?? 0, r.endIndex ?? pingRows.length - 1])}
+                      onChange={(r) => setZoomed({ query, range: [r.startIndex ?? 0, r.endIndex ?? pingRows.length - 1] })}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>

@@ -43,6 +43,10 @@
      perceives. */
   --online: oklch(0.6 0.16 150);
   --offline: oklch(0.52 0 0);
+  /* The offline card: a dark red the eye finds across a full grid, 7:1 as text
+     on its own tinted card. The only status hue besides the online dot. */
+  --down: oklch(0.45 0.15 25);
+  --down-tint: 8%;
 }
 
 /* `color-scheme` draws the browser's own controls -- the checkbox,
@@ -76,6 +80,10 @@
      the green. */
   --online: oklch(0.72 0.17 150);
   --offline: oklch(0.55 0 0);
+  /* Lifted to clear 3:1 as large text on the tinted dark card. */
+  --down: oklch(0.66 0.16 25);
+  /* A dark ground needs more of the red before it reads as red at all. */
+  --down-tint: 14%;
 }
 
 @theme inline {
@@ -107,6 +115,8 @@
   --color-warn: var(--warn);
   --color-online: var(--online);
   --color-offline: var(--offline);
+  --color-down: var(--down);
+  --color-down-card: color-mix(in oklab, var(--down) var(--down-tint), var(--card));
 }
 
 @layer base {

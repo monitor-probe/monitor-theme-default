@@ -160,6 +160,9 @@ function Expiry({ node }: { node: Node }) {
 
 export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
   const m = node.metrics
+  // A machine that reported and then stopped. One never connected has its own
+  // short card below and is not an outage.
+  const down = !node.online && deployed(node)
 
   return (
     <Card
@@ -168,12 +171,17 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       // OS line below does not wrap, so on a phone the card would grow past its
       // column and scroll the page sideways. The truncate inside only takes effect
       // once the card is allowed to be narrower.
-      className="min-w-0 cursor-pointer gap-0 p-4 transition-colors hover:border-ring"
+      className={cn(
+        "relative min-w-0 cursor-pointer gap-0 p-4 transition-colors hover:border-ring",
+        down && "border-down/60 bg-down-card hover:border-down",
+      )}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen())}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* relative lifts the name and status above the offline wash below, so
+          which machine is down stays legible. */}
+      <div className="relative z-10 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
             <Country node={node} />
@@ -195,9 +203,26 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
         </div>
       </div>
 
+      {/* Frosted over the figures rather than replacing them: the card keeps the
+          shape of its neighbours, and stale readings recede instead of passing
+          for current ones. The detail page still has them in full. */}
+      {down && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 grid place-items-center rounded-xl bg-down-card/40 backdrop-blur-sm"
+        >
+          {/* The theme's own outline badge, a size up: the card's red already
+              carries the alarm, so the word only has to name it. */}
+          <Badge className="gap-1.5 border-down/40 bg-card px-3 py-1 text-sm text-down shadow-xs">
+            <span className="size-1.5 rounded-full bg-down" />
+            离线
+          </Badge>
+        </div>
+      )}
+
       {/* One layout for both states: a disconnected node still knows its
-          cores, memory, disk size and traffic totals, and showing those with
-          the live figures blank beats a stretched card with one line in it. */}
+          cores, memory, disk size and traffic totals, so its card keeps the
+          rows and height of its neighbours, frosted by the overlay above. */}
       {deployed(node) ? (
         <>
           <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4">

@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import { ArrowDown, ArrowUp } from "lucide-react"
+import { ArrowDown, ArrowUp, ServerOff } from "lucide-react"
 import {
   siAlmalinux, siAlpinelinux, siArchlinux, siCentos, siDebian, siFedora, siLinux, siOpensuse, siRedhat,
   siRockylinux, siUbuntu, type SimpleIcon,
@@ -160,6 +160,9 @@ function Expiry({ node }: { node: Node }) {
 
 export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
   const m = node.metrics
+  // A machine that reported and then stopped. One never connected has its own
+  // short card below and is not an outage.
+  const down = !node.online && deployed(node)
 
   return (
     <Card
@@ -168,7 +171,10 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       // OS line below does not wrap, so on a phone the card would grow past its
       // column and scroll the page sideways. The truncate inside only takes effect
       // once the card is allowed to be narrower.
-      className="min-w-0 cursor-pointer gap-0 p-4 transition-colors hover:border-ring"
+      className={cn(
+        "min-w-0 cursor-pointer gap-0 p-4 transition-colors hover:border-ring",
+        down && "border-down/45 bg-down-frost hover:border-down/80",
+      )}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen())}
@@ -196,55 +202,74 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       </div>
 
       {/* One layout for both states: a disconnected node still knows its
-          cores, memory, disk size and traffic totals, and showing those with
-          the live figures blank beats a stretched card with one line in it. */}
+          cores, memory, disk size and traffic totals, so its card keeps the
+          rows and height of its neighbours. */}
       {deployed(node) ? (
-        <>
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4">
-            {/* The core count belongs beside the word CPU: it is what the
-                percentage and the load averages are both measured against. */}
-            <Meter
-              label={`CPU ${node.cpu_cores} 核`}
-              pct={m ? m.cpu : null}
-              foot={m ? m.load.map((n) => n.toFixed(2)).join(" ") : "—"}
-            />
-            <Meter
-              label="内存"
-              pct={m ? percent(m.mem_used, m.mem_total) : null}
-              foot={m ? pair(m.mem_used, m.mem_total) : bytes(node.mem_total)}
-            />
-            <Meter
-              label="硬盘"
-              pct={m ? percent(m.disk_used, m.disk_total) : null}
-              foot={m ? pair(m.disk_used, m.disk_total) : bytes(node.disk_total)}
-            />
-            <Meter
-              label="流量"
-              pct={node.traffic_limit > 0 ? percent(monthUsage(node), node.traffic_limit) : null}
-              empty={FOREVER}
-              foot={trafficFoot(node)}
-            />
-          </div>
+        <div className="relative">
+          {/* Offline, the figures are blurred and faded under the word: the
+              list answers "is it up" at a glance, and the detail page has the
+              totals in full. A filter on this block rather than a backdrop
+              over the card leaves the name row and its stacking untouched. */}
+          <div className={cn(down && "opacity-40 blur-[3px]")}>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4">
+              {/* The core count belongs beside the word CPU: it is what the
+                  percentage and the load averages are both measured against. */}
+              <Meter
+                label={`CPU ${node.cpu_cores} 核`}
+                pct={m ? m.cpu : null}
+                foot={m ? m.load.map((n) => n.toFixed(2)).join(" ") : "—"}
+              />
+              <Meter
+                label="内存"
+                pct={m ? percent(m.mem_used, m.mem_total) : null}
+                foot={m ? pair(m.mem_used, m.mem_total) : bytes(node.mem_total)}
+              />
+              <Meter
+                label="硬盘"
+                pct={m ? percent(m.disk_used, m.disk_total) : null}
+                foot={m ? pair(m.disk_used, m.disk_total) : bytes(node.disk_total)}
+              />
+              <Meter
+                label="流量"
+                pct={node.traffic_limit > 0 ? percent(monthUsage(node), node.traffic_limit) : null}
+                empty={FOREVER}
+                foot={trafficFoot(node)}
+              />
+            </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-4 text-xs">
-            <span className="tnum inline-flex items-center gap-1.5">
-              <ArrowDown className="size-3 text-muted-foreground" />
-              {m ? rate(m.net_rx) : "—"}
-            </span>
-            <span className="tnum inline-flex items-center gap-1.5">
-              <ArrowUp className="size-3 text-muted-foreground" />
-              {m ? rate(m.net_tx) : "—"}
-            </span>
-            <span className="tnum inline-flex items-center gap-1.5 text-muted-foreground">
-              <ArrowDown className="size-3" />
-              {bytes(node.total_rx)}
-            </span>
-            <span className="tnum inline-flex items-center gap-1.5 text-muted-foreground">
-              <ArrowUp className="size-3" />
-              {bytes(node.total_tx)}
-            </span>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-4 text-xs">
+              <span className="tnum inline-flex items-center gap-1.5">
+                <ArrowDown className="size-3 text-muted-foreground" />
+                {m ? rate(m.net_rx) : "—"}
+              </span>
+              <span className="tnum inline-flex items-center gap-1.5">
+                <ArrowUp className="size-3 text-muted-foreground" />
+                {m ? rate(m.net_tx) : "—"}
+              </span>
+              <span className="tnum inline-flex items-center gap-1.5 text-muted-foreground">
+                <ArrowDown className="size-3" />
+                {bytes(node.total_rx)}
+              </span>
+              <span className="tnum inline-flex items-center gap-1.5 text-muted-foreground">
+                <ArrowUp className="size-3" />
+                {bytes(node.total_tx)}
+              </span>
+            </div>
           </div>
-        </>
+          {down && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 grid place-items-center"
+            >
+              {/* Backed in the card's own colour: a near-full traffic bar
+                  blurred under the word would otherwise cut it to 2.7:1 on the dark theme. */}
+              <div className="flex flex-col items-center gap-1.5 rounded-lg bg-down-frost px-3 py-2 text-down">
+                <ServerOff className="size-5" strokeWidth={1.75} />
+                <span className="text-sm font-medium tracking-wide">离线</span>
+              </div>
+            </div>
+          )}
+        </div>
       ) : (
         /* Never connected: nothing to plot, so the card stays short rather than
            padding out to match its neighbours. */

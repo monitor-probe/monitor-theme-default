@@ -192,16 +192,19 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
   // Where the chart begins on screen, so its height can occupy the remainder.
   const [chartTop, setChartTop] = useState(0)
 
+  // The charts must not draw the old range, even for one render, while the new
+  // one is in flight, so the state is cleared during the render that asks for it.
+  const query = `${node.id}/${hours}/${tab}/${attempt}`
+  const [shown, setShown] = useState(query)
+  if (shown !== query) {
+    setShown(query)
+    setData(null)
+    setZoom(null)
+    setFailed("")
+  }
+
   useEffect(() => {
     let active = true
-    // The charts must not continue drawing the old range while the new one is in
-    // flight.
-    // oxlint-disable-next-line react/set-state-in-effect
-    setData(null)
-    // oxlint-disable-next-line react/set-state-in-effect
-    setZoom(null)
-    // oxlint-disable-next-line react/set-state-in-effect
-    setFailed("")
     // What this screen can resolve, in device pixels, which is the unit the line
     // is drawn in: a 1280-wide retina panel has 2560 of them for a day of minutes.
     // Read here rather than from a ref, since the hub only thins further, an

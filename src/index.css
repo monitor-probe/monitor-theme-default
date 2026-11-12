@@ -44,10 +44,10 @@
   --online: oklch(0.6 0.16 150);
   --offline: oklch(0.52 0 0);
   /* The offline card: a dark red the eye finds across a full grid, the only
-     status hue besides the online dot. --down-tint is how much of it the frost
-     carries; the label measures 6.8:1 against that frost. */
+     status hue besides the online dot. --down-tint is how much of it tints the
+     card; the label measures 7.3:1 against that tint. */
   --down: oklch(0.45 0.15 25);
-  --down-tint: 10%;
+  --down-tint: 6%;
 }
 
 /* `color-scheme` draws the browser's own controls -- the checkbox,
@@ -81,10 +81,10 @@
      the green. */
   --online: oklch(0.72 0.17 150);
   --offline: oklch(0.55 0 0);
-  /* Lifted to 5.5:1 against the frost, and a dark ground needs more of the red
+  /* Lifted to 6.7:1 against the tint, and a dark ground needs more of the red
      before it reads as red at all. */
-  --down: oklch(0.72 0.16 25);
-  --down-tint: 16%;
+  --down: oklch(0.75 0.15 25);
+  --down-tint: 10%;
 }
 
 @theme inline {

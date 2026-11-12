@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import { ArrowDown, ArrowUp } from "lucide-react"
+import { ArrowDown, ArrowUp, ServerOff } from "lucide-react"
 import {
   siAlmalinux, siAlpinelinux, siArchlinux, siCentos, siDebian, siFedora, siLinux, siOpensuse, siRedhat,
   siRockylinux, siUbuntu, type SimpleIcon,
@@ -173,7 +173,7 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       // once the card is allowed to be narrower.
       className={cn(
         "relative min-w-0 cursor-pointer gap-0 p-4 transition-colors hover:border-ring",
-        down && "border-down/60 bg-down-card hover:border-down",
+        down && "border-down/45 hover:border-down/80",
       )}
       role="button"
       tabIndex={0}
@@ -209,14 +209,10 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       {down && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 grid place-items-center rounded-xl bg-down-card/40 backdrop-blur-sm"
+          className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-down-frost/60 pt-10 text-down backdrop-blur-[3px]"
         >
-          {/* The theme's own outline badge, a size up: the card's red already
-              carries the alarm, so the word only has to name it. */}
-          <Badge className="gap-1.5 border-down/40 bg-card px-3 py-1 text-sm text-down shadow-xs">
-            <span className="size-1.5 rounded-full bg-down" />
-            离线
-          </Badge>
+          <ServerOff className="size-5" strokeWidth={1.75} />
+          <span className="text-sm font-medium tracking-wide">离线</span>
         </div>
       )}
 

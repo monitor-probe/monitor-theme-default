@@ -3,6 +3,7 @@ import { Activity, ArrowDown, ArrowDownUp, ArrowUp, Gauge, Server } from "lucide
 import { Card } from "@/components/ui/card"
 import { speedHistory, type Node } from "@/lib/api"
 import { bytes, rate } from "@/lib/format"
+import { deployed } from "@/components/NodeCard"
 import { cn } from "@/lib/utils"
 
 function Tile({ icon: Icon, label, children }: {
@@ -67,6 +68,10 @@ function Spark({ series }: { series: { values: number[]; className: string }[] }
 /** `group` picks the throughput series: null for every node, else the tab's group. */
 export function Summary({ nodes, group }: { nodes: Node[]; group: string | null }) {
   const online = nodes.filter((n) => n.online)
+  // A node that never connected is counted apart: its card reads 未接入, and it
+  // has not gone anywhere.
+  const absent = nodes.filter((n) => !n.online && deployed(n)).length
+  const pending = nodes.length - online.length - absent
   const sum = (pick: (n: Node) => number) => nodes.reduce((total, n) => total + pick(n), 0)
 
   // The busiest node rather than the average: one machine at 95% is what matters,
@@ -88,7 +93,7 @@ export function Summary({ nodes, group }: { nodes: Node[]; group: string | null 
           {online.length} / {nodes.length}
         </div>
         <div className="mt-auto pt-1 text-xs text-muted-foreground">
-          {nodes.length - online.length > 0 ? `${nodes.length - online.length} 个离线` : "全部在线"}
+          {[absent > 0 && `${absent} 个离线`, pending > 0 && `${pending} 个未接入`].filter(Boolean).join(" · ") || "全部在线"}
         </div>
       </Tile>
 

@@ -59,7 +59,7 @@ function monthUsage(node: Node): number {
 // A node that has reported once has told the hub its shape -- cores, memory,
 // disk -- and the hub retains its traffic totals whether connected or not. A node
 // that never connected is the only case with nothing to show.
-function deployed(node: Node) {
+export function deployed(node: Node) {
   return node.cpu_cores > 0 || node.mem_total > 0
 }
 

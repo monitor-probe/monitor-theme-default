@@ -262,8 +262,10 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
               className="pointer-events-none absolute inset-0 grid place-items-center"
             >
               {/* Backed in the card's own colour: a near-full traffic bar
-                  blurred under the word would otherwise cut it to 2.7:1 on the dark theme. */}
-              <div className="flex flex-col items-center gap-1.5 rounded-lg bg-down-frost px-3 py-2 text-down">
+                  blurred under the word would otherwise cut it to 2.7:1 on the dark theme.
+                  Solid under the word and fading out from there, so no edge
+                  cuts the blurred figures along a straight line. */}
+              <div className="flex flex-col items-center gap-1.5 bg-[radial-gradient(closest-side,var(--color-down-frost)_60%,transparent)] px-10 py-8 text-down">
                 <ServerOff className="size-5" strokeWidth={1.75} />
                 <span className="text-sm font-medium tracking-wide">离线</span>
               </div>

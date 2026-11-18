@@ -72,7 +72,7 @@
   --destructive: oklch(0.95 0 0);
   --border: oklch(1 0 0 / 12%);
   --ring: oklch(0.55 0 0);
-  /* 15.6 down to 3.3 against the card, about 1.45 apart. */
+  /* 17.1 down to 3.6 against the page the charts sit on, about 1.45 apart. */
   --chart-1: oklch(0.95 0 0);
   --chart-2: oklch(0.84 0 0);
   --chart-3: oklch(0.73 0 0);

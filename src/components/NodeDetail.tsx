@@ -12,6 +12,7 @@ import {
   axisBytes, axisTop, bytes, clockFor, cycle, despike, quarters, cpuName, FOREVER, money, osName, rate, RATE_FLOOR,
   rateAxis, tickClock, timeTicks, windows, withGaps,
 } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 type Point = {
   ts: number
@@ -72,20 +73,54 @@ const RESOURCE_SERIES = {
 // overhanging the page by up to 140 px and flashing a horizontal scrollbar.
 //
 // Painted in the card's colours: recharts draws a white box, on which the dark
-// palette's near-white series would measure 1.2:1. The entries take the text
-// colour rather than their series' grey, the lighter of which fall short of
-// 4.5:1 as text.
+// palette's near-white series would measure 1.2:1. `backgroundColor` rather
+// than the shorthand, so it replaces recharts' own key instead of sitting beside
+// it. The entries take the text colour rather than their series' grey, the
+// lighter of which fall short of 4.5:1 as text; where a chart has several
+// series, `swatched` puts each line's mark beside its entry instead.
 const TOOLTIP = {
   isAnimationActive: false,
   labelFormatter: (ts: unknown) => new Date(Number(ts)).toLocaleString("zh-CN"),
   contentStyle: {
     fontSize: 12,
-    background: "var(--color-card)",
+    backgroundColor: "var(--color-card)",
     color: "var(--color-card-foreground)",
     border: "1px solid var(--color-border)",
     borderRadius: "var(--radius)",
   },
   itemStyle: { color: "var(--color-card-foreground)" },
+}
+
+/** A short stroke in a line's shade and dash, the mark every legend and tooltip entry uses. */
+function Swatch({ stroke, dash, className }: { stroke: string; dash?: string; className?: string }) {
+  return (
+    <svg
+      width="14"
+      height="6"
+      fill="none"
+      stroke={stroke}
+      strokeDasharray={dash}
+      strokeWidth="2"
+      className={cn("inline-block shrink-0 align-middle", className)}
+      aria-hidden
+    >
+      <line x1="0" y1="3" x2="14" y2="3" />
+    </svg>
+  )
+}
+
+/**
+ * A tooltip entry led by its line's mark. recharts draws a name only when it is
+ * plain text, so the mark, name and value travel together as the value.
+ */
+function swatched(text: string, name: unknown, stroke: unknown, dash?: string): [React.ReactNode, undefined] {
+  return [
+    <span key="entry" className="inline-flex items-center gap-1.5">
+      <Swatch stroke={String(stroke)} dash={dash} />
+      {String(name)} : {text}
+    </span>,
+    undefined,
+  ]
 }
 
 // One width for every stacked panel's value axis. Sized to their own labels --
@@ -529,7 +564,8 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                       // milliseconds the hub stores.
                       formatter={(v, name, item) => {
                         const loss = Number(item?.payload?.[`l${String(item.dataKey).slice(1)}`] ?? 0)
-                        return [`${Math.round(Number(v))} ms${loss > 0 ? ` · 丢 ${loss}%` : ""}`, name]
+                        const dash = style(Number(String(item.dataKey).slice(1))).dash
+                        return swatched(`${Math.round(Number(v))} ms${loss > 0 ? ` · 丢 ${loss}%` : ""}`, name, item?.color, dash)
                       }}
                     />
                     {/* Behind the line, the range that bucket's answers
@@ -596,27 +632,19 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                       onClick={() =>
                         setHiddenProbes((h) => (shown ? [...h, s.id] : h.filter((id) => id !== s.id)))
                       }
-                      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-opacity ${
-                        shown ? "" : "opacity-40"
-                      }`}
+                      // Switched off in the muted text colour rather than faded
+                      // as a whole: at 40% opacity the name would measure 2.6:1.
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors",
+                        !shown && "text-muted-foreground",
+                      )}
                     >
-                      {/* The swatch carries the same shade and dash as the line. */}
-                      <svg width="14" height="6" className="shrink-0" aria-hidden>
-                        <line
-                          x1="0"
-                          y1="3"
-                          x2="14"
-                          y2="3"
-                          stroke={style(s.id).stroke}
-                          strokeDasharray={style(s.id).dash}
-                          strokeWidth="2"
-                        />
-                      </svg>
+                      <Swatch stroke={style(s.id).stroke} dash={style(s.id).dash} className={cn(!shown && "opacity-40")} />
                       {s.name}
                       {/* The line is only what answered, so a probe dropping
                           half its packets draws like a healthy one. */}
                       {s.loss > 0 && (
-                        <span className="tnum opacity-60">
+                        <span className="tnum text-muted-foreground">
                           丢 {s.loss < 1 ? "<1" : Math.round(s.loss)}%
                         </span>
                       )}
@@ -689,7 +717,7 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
                   formatter={(_, name, item) => {
                     const mean = item?.payload?.[`net_${item.dataKey}`]
                     const top = item?.payload?.[`net_${item.dataKey}_max`]
-                    return [top === undefined ? rate(mean) : `均值 ${rate(mean)} · 峰值 ${rate(top)}`, name]
+                    return swatched(top === undefined ? rate(mean) : `均值 ${rate(mean)} · 峰值 ${rate(top)}`, name, item?.color)
                   }}
                 />
                 {[

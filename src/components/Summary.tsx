@@ -1,8 +1,9 @@
+import { Fragment } from "react"
 import { Activity, ArrowDown, ArrowDownUp, ArrowUp, Gauge, Server } from "lucide-react"
 
 import { Card } from "@/components/ui/card"
 import { speedHistory, type Node } from "@/lib/api"
-import { bytes, rate } from "@/lib/format"
+import { bytes, fleetParts, rate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 function Tile({ icon: Icon, label, children }: {
@@ -88,7 +89,12 @@ export function Summary({ nodes, group }: { nodes: Node[]; group: string | null 
           {online.length} / {nodes.length}
         </div>
         <div className="mt-auto pt-1 text-xs text-muted-foreground">
-          {nodes.length - online.length > 0 ? `${nodes.length - online.length} 个离线` : "全部在线"}
+          {fleetParts(nodes).map((part, i) => (
+            <Fragment key={part}>
+              {i > 0 && " · "}
+              <span className="whitespace-nowrap">{part}</span>
+            </Fragment>
+          ))}
         </div>
       </Tile>
 

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Meter } from "@/components/Meter"
 import type { Node } from "@/lib/api"
-import { bytes, daysUntil, FOREVER, osName, pair, percent, rate, sinceSeen, uptime } from "@/lib/format"
+import { bytes, daysUntil, deployed, FOREVER, osName, pair, percent, rate, sinceSeen, uptime } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 // Emitted as files and fetched on first use, so a page carries only the flags its
@@ -54,13 +54,6 @@ function monthUsage(node: Node): number {
     default:
       return rx + tx
   }
-}
-
-// A node that has reported once has told the hub its shape -- cores, memory,
-// disk -- and the hub retains its traffic totals whether connected or not. A node
-// that never connected is the only case with nothing to show.
-function deployed(node: Node) {
-  return node.cpu_cores > 0 || node.mem_total > 0
 }
 
 /**

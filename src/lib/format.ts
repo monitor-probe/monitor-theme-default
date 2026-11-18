@@ -372,6 +372,29 @@ function median(values: number[]): number {
  * dropped a minute ago as offline for eight hours. The browser's clock serves
  * only a hub from before `last_seen_ago`.
  */
+/**
+ * Whether the node has ever reported. One that has told the hub its shape --
+ * cores, memory, disk -- and the hub retains its traffic totals whether connected
+ * or not; one that never connected is the only case with nothing to show.
+ */
+export function deployed(node: { cpu_cores: number; mem_total: number }): boolean {
+  return node.cpu_cores > 0 || node.mem_total > 0
+}
+
+/**
+ * The line under the summary's node count. A node that never connected is
+ * counted apart from the offline ones, since its card reads 未接入 and it has no
+ * outage to report. Each part is returned whole, so the tile can keep a count
+ * beside its words where the line wraps.
+ */
+export function fleetParts(nodes: { online: boolean; cpu_cores: number; mem_total: number }[]): string[] {
+  if (nodes.length === 0) return ["暂无节点"]
+  const absent = nodes.filter((n) => !n.online && deployed(n)).length
+  const pending = nodes.filter((n) => !n.online && !deployed(n)).length
+  const parts = [absent > 0 ? `${absent} 个离线` : "", pending > 0 ? `${pending} 个未接入` : ""].filter(Boolean)
+  return parts.length > 0 ? parts : ["全部在线"]
+}
+
 export function sinceSeen(node: { last_seen: number; last_seen_ago?: number | null }): number {
   if (node.last_seen_ago !== undefined) return node.last_seen_ago ?? 0
   return node.last_seen ? Date.now() / 1000 - node.last_seen : 0

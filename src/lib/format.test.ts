@@ -4,7 +4,7 @@
 //
 // Nothing imports it, so the bundle never includes it.
 import {
-  axisBytes, axisTop, bytes, cpuName, cycle, daysUntil, despike, money, osName, pair, percent, quarters,
+  axisBytes, axisTop, bytes, cpuName, cycle, daysUntil, deployed, despike, fleetParts, money, osName, pair, percent, quarters,
   RATE_FLOOR, rateAxis, sinceSeen, tickClock, timeTicks, uptime, windows, withGaps,
 } from "./format.ts"
 
@@ -189,6 +189,19 @@ eq(money(100, "港币"), "港币 100.00", "旧 hub 存下的非法代码不抛�
 
 eq(osName("Debian GNU/Linux 12 (bookworm)"), "Debian 12", "发行版名去掉代号")
 eq(cpuName("Intel(R) Xeon(R) CPU E5-2680 8-Core Processor"), "Intel Xeon E5-2680", "CPU 名去掉商标和核数")
+
+// fleetParts: a node that never connected is 未接入, not offline; one that
+// reported once (cores or memory known) and is gone is offline.
+const up = { online: true, cpu_cores: 2, mem_total: 1 }
+const gone = { online: false, cpu_cores: 2, mem_total: 1 }
+const never = { online: false, cpu_cores: 0, mem_total: 0 }
+eq(fleetParts([]), ["暂无节点"], "没有节点时不说全部在线")
+eq(fleetParts([up, up]), ["全部在线"], "全部在线")
+eq(fleetParts([up, gone, never, never]), ["1 个离线", "2 个未接入"], "离线与未接入分开数")
+eq(fleetParts([never]), ["1 个未接入"], "只有未接入时不报离线")
+eq(fleetParts([{ online: false, cpu_cores: 0, mem_total: 512 }]), ["1 个离线"], "只知道内存也算接入过")
+eq(fleetParts([{ online: true, cpu_cores: 0, mem_total: 0 }]), ["全部在线"], "刚连上、还没上报的节点算在线")
+eq(deployed(never), false, "deployed(从没上报)")
 
 if (failed) {
   console.error(`\n${failed} 项不通过`)

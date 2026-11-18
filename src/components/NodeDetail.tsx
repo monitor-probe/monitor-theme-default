@@ -70,10 +70,22 @@ const RESOURCE_SERIES = {
 // Nor does the tooltip slide. Entering a chart at its right edge, it appears
 // beside the cursor first and would glide 400 ms back within the chart,
 // overhanging the page by up to 140 px and flashing a horizontal scrollbar.
+//
+// Painted in the card's colours: recharts draws a white box, on which the dark
+// palette's near-white series would measure 1.2:1. The entries take the text
+// colour rather than their series' grey, the lighter of which fall short of
+// 4.5:1 as text.
 const TOOLTIP = {
   isAnimationActive: false,
   labelFormatter: (ts: unknown) => new Date(Number(ts)).toLocaleString("zh-CN"),
-  contentStyle: { fontSize: 12 },
+  contentStyle: {
+    fontSize: 12,
+    background: "var(--color-card)",
+    color: "var(--color-card-foreground)",
+    border: "1px solid var(--color-border)",
+    borderRadius: "var(--radius)",
+  },
+  itemStyle: { color: "var(--color-card-foreground)" },
 }
 
 // One width for every stacked panel's value axis. Sized to their own labels --

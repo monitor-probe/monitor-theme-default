@@ -28,11 +28,14 @@
   --destructive: oklch(0.3 0 0);
   --border: oklch(0.9 0 0);
   --ring: oklch(0.62 0 0);
+  /* Up to five probe lines share the latency chart. Each step clears 3:1
+     against the ground (13.6 down to 3.6) and sits about 1.4 from the next;
+     the dash patterns separate what lightness cannot. */
   --chart-1: oklch(0.3 0 0);
-  --chart-2: oklch(0.45 0 0);
-  --chart-3: oklch(0.58 0 0);
-  --chart-4: oklch(0.7 0 0);
-  --chart-5: oklch(0.82 0 0);
+  --chart-2: oklch(0.38 0 0);
+  --chart-3: oklch(0.46 0 0);
+  --chart-4: oklch(0.54 0 0);
+  --chart-5: oklch(0.62 0 0);
   /* Greyscale has no green or amber, so lightness carries both: --ok draws the
      download line, lighter than the upload's --chart-1, and --warn an expiry
      within a week, darker than the muted text beside it. */
@@ -69,11 +72,12 @@
   --destructive: oklch(0.95 0 0);
   --border: oklch(1 0 0 / 12%);
   --ring: oklch(0.55 0 0);
+  /* 17.1 down to 3.6 against the page the charts sit on, about 1.45 apart. */
   --chart-1: oklch(0.95 0 0);
-  --chart-2: oklch(0.82 0 0);
-  --chart-3: oklch(0.68 0 0);
-  --chart-4: oklch(0.54 0 0);
-  --chart-5: oklch(0.42 0 0);
+  --chart-2: oklch(0.84 0 0);
+  --chart-3: oklch(0.73 0 0);
+  --chart-4: oklch(0.62 0 0);
+  --chart-5: oklch(0.52 0 0);
   /* Inverted against the dark ground: --warn is brighter than the muted text. */
   --ok: oklch(0.62 0 0);
   --warn: oklch(0.79 0 0);

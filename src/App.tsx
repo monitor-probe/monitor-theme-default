@@ -14,7 +14,8 @@ type Me = { authed: boolean; github: boolean; site_name: string; public_page: bo
 
 // Split out because recharts is most of this bundle and the list page draws no
 // chart. The landing page is 288 kB rather than 678 kB (95 kB gzipped against
-// 207 kB), with the rest fetched once the list has painted.
+// 207 kB), with the rest fetched once the list has painted, or at once on a
+// node's own page.
 const loadDetail = () => import("@/components/NodeDetail").then((m) => ({ default: m.NodeDetail }))
 const NodeDetail = lazy(loadDetail)
 
@@ -130,14 +131,16 @@ export default function App() {
 
   // Warmed rather than left to Suspense, which requests the chunk only once a
   // render reaches the detail view: without it the first node opened shows a
-  // skeleton, 2.6s click-to-chart on 4G against 1.4s unsplit, 1.7s warm. Not
-  // before the list is on screen: a server that sends the chunk at once, as
-  // one serving precompressed files does, puts all of it ahead of /api/nodes on
-  // a slow link, 0.4s later to the list on 4G.
+  // skeleton, 2.6s click-to-chart on 4G against 1.4s unsplit, 1.7s warm. On the
+  // list, not before it is on screen: from a server that sends the chunk at
+  // once, as one serving precompressed files does, all of it would arrive ahead
+  // of /api/nodes on a slow link, 0.4s later to the list on 4G. A node's own
+  // page needs the chunk to show anything, so it is fetched there at once.
   const listShown = !!me && !!nodes && !!config
+  const onNode = open !== null
   useEffect(() => {
-    if (listShown) void loadDetail()
-  }, [listShown])
+    if (listShown || onNode) void loadDetail()
+  }, [listShown, onNode])
 
   // The status page was closed while this tab was open. `me` holds whatever it
   // reported at load, so it is re-queried; the effect below then directs an

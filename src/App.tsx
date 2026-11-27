@@ -33,17 +33,16 @@ function useNodeRoute() {
     addEventListener("popstate", sync)
     return () => removeEventListener("popstate", sync)
   }, [])
-  return [
-    id,
-    (next: number | null) => {
-      const path = next === null ? "/" : `/node/${next}`
-      // The site name leads to the list from the list as well, and each repeat
-      // would otherwise cost one more press of back.
-      if (location.pathname !== path) history.pushState({}, "", path)
-      setId(next)
-      scrollTo(0, 0)
-    },
-  ] as const
+  // Stable, so the cards it is handed to can skip a frame that leaves them as they are.
+  const go = useCallback((next: number | null) => {
+    const path = next === null ? "/" : `/node/${next}`
+    // The site name leads to the list from the list as well, and each repeat
+    // would otherwise cost one more press of back.
+    if (location.pathname !== path) history.pushState({}, "", path)
+    setId(next)
+    scrollTo(0, 0)
+  }, [])
+  return [id, go] as const
 }
 
 const DARK_MEDIA = matchMedia("(prefers-color-scheme: dark)")
@@ -286,7 +285,7 @@ function NodeList({ nodes, group, summary, onGroup, onOpen }: {
       ) : (
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((n) => (
-            <NodeCard key={n.id} node={n} onOpen={() => onOpen(n.id)} />
+            <NodeCard key={n.id} node={n} onOpen={onOpen} />
           ))}
         </div>
       )}

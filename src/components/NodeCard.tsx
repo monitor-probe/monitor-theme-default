@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react"
+import { memo, useEffect, useRef, useState, type CSSProperties, type Ref } from "react"
 import { ArrowDown, ArrowUp, ServerOff } from "lucide-react"
 import {
   siAlmalinux, siAlpinelinux, siArchlinux, siCentos, siDebian, siFedora, siLinux, siOpensuse, siRedhat,
@@ -151,7 +151,41 @@ function Expiry({ node }: { node: Node }) {
   )
 }
 
-export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
+/**
+ * A card that holds still while it is off screen. Every frame replaces every
+ * node while a screen shows a dozen cards, and rendering all of them would cost
+ * the list 204 ms per frame against 57 at 200 nodes in desktop Chromium, 847
+ * against 228 with its CPU slowed fourfold. One outside the viewport, or the
+ * half screen above and below it, keeps the node it last showed and catches up
+ * as it nears. A jump rather than a scroll (Home, a find-in-page match) shows the
+ * held data for the frame before the observer reports, and find-in-page, print
+ * and a screen reader read it as it was when the card left.
+ */
+export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [near, setNear] = useState(true)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const watch = new IntersectionObserver(
+      // The last entry: a card that left and returned before a busy main thread
+      // took the callback arrives as both, oldest first.
+      (entries) => setNear(entries[entries.length - 1].isIntersecting),
+      { rootMargin: "50% 0px" },
+    )
+    watch.observe(el)
+    return () => watch.disconnect()
+  }, [])
+  const [shown, setShown] = useState(node)
+  if (near && shown !== node) setShown(node)
+  return <LiveCard ref={ref} node={shown} onOpen={onOpen} />
+}
+
+const LiveCard = memo(function LiveCard({ node, onOpen, ref }: {
+  node: Node
+  onOpen: (id: number) => void
+  ref: Ref<HTMLDivElement>
+}) {
   const m = node.metrics
   // A machine that reported and then stopped. One never connected has its own
   // short card below and is not an outage.
@@ -159,7 +193,8 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
 
   return (
     <Card
-      onClick={onOpen}
+      ref={ref}
+      onClick={() => onOpen(node.id)}
       // min-w-0: a grid item sizes to its content unless told otherwise, and the
       // OS line below does not wrap, so on a phone the card would grow past its
       // column and scroll the page sideways. The truncate inside only takes effect
@@ -170,7 +205,7 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       )}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen())}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(node.id))}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -274,4 +309,4 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: () => void }) {
       )}
     </Card>
   )
-}
+})

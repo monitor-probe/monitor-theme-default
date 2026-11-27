@@ -271,8 +271,8 @@ export function NodeDetail({ node, historyDays }: { node: Node; historyDays: num
 /**
  * A node's history: the two tabs, their windows and their charts. Memoised on
  * plain values, so the live frame that replaces the node every two seconds
- * re-renders only the facts above it rather than four charts whose data it
- * leaves unchanged. Re-rendering them on every frame would cost the page 47 ms
+ * re-renders only the facts above it rather than the tabs and charts below,
+ * whose data it leaves unchanged. Re-rendering them on every frame would cost the page 47 ms
  * per frame against 5.5 at 200 nodes in desktop Chromium, and 247 against 22
  * with its CPU slowed fourfold.
  *
@@ -316,6 +316,20 @@ const NodeHistory = memo(function NodeHistory({ nodeId, historyDays, memTotal, d
   const zoom = zoomed?.query === query ? zoomed.range : null
   // Where the chart begins on screen, so its height can occupy the remainder.
   const [chartTop, setChartTop] = useState(0)
+  const [chartColumn, setChartColumn] = useState<HTMLDivElement | null>(null)
+  // Re-measured whenever anything above the column moves it, which this
+  // component does not render and so cannot see: the facts grid reflowing on a
+  // rotation, the header rewrapping when the status flips, the page's error line
+  // appearing. Each of those resizes one of the column's ancestors. `+ scrollY`,
+  // because getBoundingClientRect is measured from the viewport and a scrolled
+  // page would otherwise read a top that has moved.
+  useEffect(() => {
+    if (!chartColumn) return
+    const measure = () => setChartTop(chartColumn.getBoundingClientRect().top + scrollY)
+    const observer = new ResizeObserver(measure)
+    for (let el = chartColumn.parentElement; el; el = el.parentElement) observer.observe(el)
+    return () => observer.disconnect()
+  }, [chartColumn])
 
   useEffect(() => {
     let active = true
@@ -537,12 +551,7 @@ const NodeHistory = memo(function NodeHistory({ nodeId, historyDays, memTotal, d
           // of chips on a desktop and two on a phone, so any fixed reservation is
           // wrong on one of them.
           <div
-            // `+ scrollY`, because getBoundingClientRect is measured from the
-            // viewport and this callback runs on every render, so a scrolled page
-            // would re-derive the height from a top that has moved.
-            ref={(el) => {
-              if (el) setChartTop(el.getBoundingClientRect().top + scrollY)
-            }}
+            ref={setChartColumn}
             style={
               chartTop
                 ? { height: `calc(100svh - ${Math.round(chartTop)}px - 1rem)` }

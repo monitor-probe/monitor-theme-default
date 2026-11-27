@@ -27,9 +27,10 @@ export function Meter({ label, pct, foot, empty = "—" }: Props) {
             nodes in desktop Chromium. Shifted left by what it lacks, the
             full-width bar keeps its rounded end, and the track's rounding clips
             the start as before. Hidden when empty, where the edge it is moved
-            out past would otherwise antialias into a sliver. */}
+            out past would otherwise antialias into a sliver; visibility is
+            transitioned too, so the hiding waits for the slide to finish. */}
         <div
-          className={`h-full rounded-full bg-foreground transition-transform duration-500 ${filled === 0 ? "invisible" : ""}`}
+          className={`h-full rounded-full bg-foreground transition-[transform,visibility] duration-500 ${filled === 0 ? "invisible" : ""}`}
           style={{ transform: `translateX(${filled - 100}%)` }}
         />
       </div>

@@ -157,7 +157,9 @@ function Expiry({ node }: { node: Node }) {
  * the list 204 ms per frame against 57 at 200 nodes in desktop Chromium, 847
  * against 228 with its CPU slowed fourfold. One outside the viewport, or the
  * half screen above and below it, keeps the node it last showed and catches up
- * as it nears.
+ * as it nears. A jump rather than a scroll (Home, a find-in-page match) shows the
+ * held data for the frame before the observer reports, and find-in-page, print
+ * and a screen reader read it as it was when the card left.
  */
 export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) => void }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -165,7 +167,12 @@ export function NodeCard({ node, onOpen }: { node: Node; onOpen: (id: number) =>
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const watch = new IntersectionObserver(([entry]) => setNear(entry.isIntersecting), { rootMargin: "50% 0px" })
+    const watch = new IntersectionObserver(
+      // The last entry: a card that left and returned before a busy main thread
+      // took the callback arrives as both, oldest first.
+      (entries) => setNear(entries[entries.length - 1].isIntersecting),
+      { rootMargin: "50% 0px" },
+    )
     watch.observe(el)
     return () => watch.disconnect()
   }, [])

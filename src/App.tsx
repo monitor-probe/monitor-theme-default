@@ -285,7 +285,9 @@ function NodeList({ nodes, group, summary, onGroup, onOpen }: {
       ) : (
         // Keyed by the tab, so a group's cards mount with its nodes as they are
         // now rather than as each card last showed while it was off screen.
-        <div key={current ?? "*"} className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        // Prefixed like the tabs: a group named "*" would otherwise share the
+        // 全部 tab's key and keep its cards.
+        <div key={current === null ? "*" : `=${current}`} className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {shown.map((n) => (
             <NodeCard key={n.id} node={n} onOpen={onOpen} />
           ))}
